@@ -1,20 +1,16 @@
-import * as Z64API from 'Z64Lib/API/imports';
 import { InjectCore } from 'modloader64_api/CoreInjection';
-import { IModLoaderAPI, IPlugin } from 'modloader64_api/IModLoaderAPI';
+import { IModLoaderAPI } from 'modloader64_api/IModLoaderAPI';
 import { ModLoaderAPIInject } from "modloader64_api/ModLoaderAPIInjector";
-import { BindVar, BindVar_Sizes } from "modloader64_api/BindVar";
-import { onTick, onViUpdate } from "modloader64_api/PluginLifecycle";
-import { bool_ref, InputTextFlags, MouseButton, SelectableFlags, string_ref, StyleVar, WindowFlags } from 'modloader64_api/Sylvain/ImGui';
+import { onViUpdate } from "modloader64_api/PluginLifecycle";
+import { StyleVar, WindowFlags } from 'modloader64_api/Sylvain/ImGui';
 import { IZ64Main } from 'Z64Lib/API/Common/IZ64Main';
-import { readFileSync } from 'fs';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Scene } from 'Z64Lib/API/OoT/OOTAPI';
 import { Z64_GAME } from 'Z64Lib/src/Common/types/GameAliases';
 import { Z64LibSupportedGames } from 'Z64Lib/API/Utilities/Z64LibSupportedGames';
 import { Texture } from 'modloader64_api/Sylvain/Gfx';
-import { Button, ButtonState, Z64Input } from './ButtonState';
-import { vec2, vec3, vec4 } from 'modloader64_api/Sylvain/vec';
+import { ButtonState, Z64Input } from './ButtonState';
+import { vec2, vec3 } from 'modloader64_api/Sylvain/vec';
 import bitwise from 'bitwise';
 import { UInt8 } from 'bitwise/types';
 import { EventHandler, EventsClient } from 'modloader64_api/EventHandler';
@@ -173,10 +169,6 @@ export default class SongOfSoaring {
         this.GoronCity          // 8 -
     ];
 
-
-
-    // save location 8011B874
-
     @EventHandler(Z64.OotEvents.ON_SAVE_LOADED)
     onSaveLoad() {
         //TODO pick where I'm loading from.
@@ -216,14 +208,6 @@ export default class SongOfSoaring {
         this.locations = JSON.parse(fs.readFileSync(path.resolve(__dirname, "owl.json")).toString());
     }
 
-    @onTick() // Once per Frame
-    onTick() {
-        if (Z64_GAME === Z64LibSupportedGames.OCARINA_OF_TIME) {
-
-
-        }
-    }
-
     transport(warp: IWarpLocation) {
         this.currentOwl = undefined;
         this.ModLoader.emulator.rdramWrite32(0x8011B934, 0x3);
@@ -251,7 +235,6 @@ export default class SongOfSoaring {
         ry *= s2rad;
 
         let fwd: Vector3 = new Vector3(Math.sin(ry), 0, Math.cos(ry)); // normal direction the owl is facing
-        let pos = new Vector3(px, py, pz).plus(fwd.multiplyN(60))
 
         sb.writeFloatBE(px); // x
         sb.writeFloatBE(py); // y
@@ -309,7 +292,6 @@ export default class SongOfSoaring {
 
             if (this.boot) { //ONLY HAPPENS ON BOOT
 
-
                 this.init();
 
                 this.owl = this.ModLoader.Gfx.createTexture();
@@ -329,9 +311,6 @@ export default class SongOfSoaring {
                 this.boot = false;
             }
 
-
-
-
             if (this.saveLoaded) {
                 this.owlData = this.ModLoader.emulator.rdramReadBuffer(0x8011B874, 2);
             }
@@ -342,10 +321,6 @@ export default class SongOfSoaring {
             if (this.Input.DUp.state === ButtonState.Down && this.Input.Z.state === ButtonState.Down) {
                 this.songPlayed = true;
             }
-
-
-
-
 
             if (this.songPlayed) {
 
@@ -402,8 +377,6 @@ export default class SongOfSoaring {
                         }
                     }
 
-
-
                     if (this.Input.joystickX > 50 && !this.inputstall) { // MENU INPUTS
                         if (this.owlData.equals(EMPTY_OWL_DATA)) {
                             this.blip.play();
@@ -447,18 +420,13 @@ export default class SongOfSoaring {
                         this.inputstall = false;
                     }
 
-
                     this.placeOnMap(this.cursor, this.warpLocations[this.cursorPos].mapLoc)
-
-
 
                     if (this.Input.A.state >= ButtonState.Pressed) {
                         this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_PauseMenu_Select.wav")).play();
                         this.transport(this.warpLocations[this.cursorPos]);
                         this.songPlayed = false;
                     }
-
-
 
                     this.ModLoader.ImGui.popStyleVar();
                 }
@@ -481,7 +449,6 @@ export default class SongOfSoaring {
     }
 
     constrainWindow(xi: number, yi: number) {
-
         if (xi > this.ModLoader.ImGui.getWindowContentRegionMax().x) {
             xi = this.ModLoader.ImGui.getWindowContentRegionMax().x;
             yi = (xi * this.map.height) / this.map.width;
@@ -503,11 +470,9 @@ export default class SongOfSoaring {
     }
 
     placeOnMap(image: Texture, pos: vec2) {
-
         let xval = (this.mapSize.x * pos.x) / 1000;
         let yval = (this.mapSize.y * pos.y) / 1000;
         this.ModLoader.ImGui.getWindowDrawList().addImage(image.id, { x: xval - ((image.width / 2) / this.mapScale), y: yval - ((image.height / 2) / this.mapScale) }, { x: xval + ((image.width / 2) / this.mapScale), y: yval + ((image.height / 2) / this.mapScale) });
-
     }
 
     spawnOwl(i: number) {
