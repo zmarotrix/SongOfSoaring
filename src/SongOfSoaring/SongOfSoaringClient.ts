@@ -1,7 +1,7 @@
 import { InjectCore } from 'modloader64_api/CoreInjection';
 import { IModLoaderAPI } from 'modloader64_api/IModLoaderAPI';
 import { ModLoaderAPIInject } from "modloader64_api/ModLoaderAPIInjector";
-import { onCreateResources, onViUpdate } from "modloader64_api/PluginLifecycle";
+import { Init, onCreateResources, onViUpdate, Postinit } from "modloader64_api/PluginLifecycle";
 import { StyleVar, WindowFlags } from 'modloader64_api/Sylvain/ImGui';
 import { IZ64Main } from 'Z64Lib/API/Common/IZ64Main';
 import * as fs from 'fs';
@@ -192,17 +192,19 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
             this.owlStatue = evt.result;
             let temp = this.ModLoader.emulator.rdramReadBuffer(evt.result.pointer, evt.result.size);
             let zz = new zzstatic2();
-            let model = temp.slice(0x590);
-            zz.repoint(model, evt.result.pointer + 0x590);
+            let model = temp.slice(0x570);
+            zz.repoint(model, evt.result.pointer + 0x570);
             this.ModLoader.emulator.rdramWriteBuffer(evt.result.pointer, temp);
             this.model = evt.result.pointer;
         }
     }
 
+    @Init()
     init() {
         this.Input = new Z64Input(this.ModLoader.emulator, 0x801C84B4);
     }
 
+    @Postinit()
     postinit(): void {
         this.locations = JSON.parse(fs.readFileSync(path.resolve(__dirname, "owl.json")).toString());
     }
@@ -312,6 +314,10 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
     onViUpdate() {
         if (this.saveLoaded) {
             this.owlData = this.ModLoader.emulator.rdramReadBuffer(0x8011B874, 2);
+            this.songPlayed = false;
+        }else{
+            this.songPlayed = false;
+            return;
         }
 
         //@ts-ignore
