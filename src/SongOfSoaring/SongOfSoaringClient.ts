@@ -277,7 +277,8 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
             this.songPlayed = true;
         }
 
-        if (this.ModLoader.ImGui.begin("DEBUG2###Maro:DEBUG2")) {
+        // Uncomment me if den messed up any of the spawn locations.
+        /* if (this.ModLoader.ImGui.begin("DEBUG2###Maro:DEBUG2")) {
             if (this.ModLoader.ImGui.smallButton("FUCK")) {
                 let a: any = {
                     adultSpawnPos: this.core.OOT!.link.position.getRawPos(),
@@ -287,7 +288,7 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
                 };
                 console.log(JSON.stringify(a));
             }
-        }
+        } */
 
         this.ModLoader.ImGui.end();
 
