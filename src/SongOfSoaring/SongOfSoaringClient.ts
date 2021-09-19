@@ -167,8 +167,8 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
             this.owlStatue = evt.result;
             let temp = this.ModLoader.emulator.rdramReadBuffer(evt.result.pointer, evt.result.size);
             let zz = new zzstatic2();
-            let model = temp.slice(0x5A0);
-            zz.repoint(model, evt.result.pointer + 0x5A0);
+            let model = temp.slice(0x5F0);
+            zz.repoint(model, evt.result.pointer + 0x5F0);
             this.ModLoader.emulator.rdramWriteBuffer(evt.result.pointer, temp);
             this.model = evt.result.pointer;
         }
