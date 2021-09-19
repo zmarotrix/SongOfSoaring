@@ -6,8 +6,6 @@ import { StyleVar, WindowFlags } from 'modloader64_api/Sylvain/ImGui';
 import { IZ64Main } from 'Z64Lib/API/Common/IZ64Main';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Z64_GAME } from 'Z64Lib/src/Common/types/GameAliases';
-import { Z64LibSupportedGames } from 'Z64Lib/API/Utilities/Z64LibSupportedGames';
 import { Texture } from 'modloader64_api/Sylvain/Gfx';
 import { ButtonState, Z64Input } from './ButtonState';
 import { vec2, vec3 } from 'modloader64_api/Sylvain/vec';
