@@ -34,6 +34,7 @@ interface OwlData {
 }
 
 const EMPTY_OWL_DATA: Buffer = Buffer.alloc(2, 0);
+export const SAVE_DATA_POINTER: number = 0x8011B874;
 
 export default class SongOfSoaringClient implements ISongOfSoaringClient {
     @ModLoaderAPIInject()
@@ -41,8 +42,9 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
     @InjectCore()
     core!: IZ64Main;
     Input!: Z64Input;
+    
 
-    songPlayed: boolean = true;
+    songPlayed: boolean = false;
     owlData: Buffer = Buffer.alloc(2, 0);
     owl!: Texture;
     map!: Texture;
@@ -170,9 +172,8 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
 
     @EventHandler(Z64.OotEvents.ON_SAVE_LOADED)
     onSaveLoad() {
-        //TODO pick where I'm loading from.
         this.saveLoaded = true;
-        bitwise.byte.read(this.owlData[0] as UInt8)
+        this.owlData = this.ModLoader.emulator.rdramReadBuffer(SAVE_DATA_POINTER, 2);
     }
 
     @EventHandler(Z64.OotEvents.ON_SCENE_CHANGE)
@@ -302,8 +303,6 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
             this.cursor.loadFromFile(path.resolve(__dirname, "cursor.png"));
 
             this.blip = this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_PauseMenu_Cursor.wav"));
-            this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_PauseMenu_Cursor.wav")).play();
-
 
             this.mapSize = { x: this.map.width * 2, y: this.map.height * 2 }
             this.boot = false;
@@ -312,14 +311,6 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
 
     @onViUpdate() // Once per vertical interrupt (refresh, buffer swap)
     onViUpdate() {
-        if (this.saveLoaded) {
-            this.owlData = this.ModLoader.emulator.rdramReadBuffer(0x8011B874, 2);
-            this.songPlayed = false;
-        }else{
-            this.songPlayed = false;
-            return;
-        }
-
         //@ts-ignore
         this.Input.step(this.core.OOT?.global.framecount); // required for Input
 
@@ -371,14 +362,15 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
 
                 this.ModLoader.ImGui.getWindowDrawList().addImage(this.map.id, { x: 0, y: 0 }, { x: this.ModLoader.ImGui.getWindowWidth(), y: this.ModLoader.ImGui.getWindowHeight() });
 
+                
                 for (let i = 0; i < this.warpLocations.length; i++) {
                     if (i < bitwise.byte.read(this.owlData[0] as UInt8).length) {
                         if (Boolean(bitwise.byte.read(this.owlData[0] as UInt8)[i])) {
                             this.placeOnMap(this.owl, this.warpLocations[i].mapLoc);
                         }
-                    }
+                    } 
                     if (Boolean(bitwise.byte.read(this.owlData[1] as UInt8)[0])) {
-                        this.placeOnMap(this.owl, this.warpLocations[i].mapLoc);
+                        this.placeOnMap(this.owl, this.warpLocations[8].mapLoc);
                     }
                 }
 
@@ -437,7 +429,7 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
             }
             this.ModLoader.ImGui.end();
             if (this.ModLoader.ImGui.begin("DEBUG###Maro:DEBUG")) {
-                this.ModLoader.ImGui.text(`What the fuck is going on with the byte array?\n${this.owlData}`);
+                this.ModLoader.ImGui.text(`What the fuck is going on with the byte array?\n ${this.owlData[0]}\n${this.owlData[1]}`);
             }
 
             this.ModLoader.ImGui.end();
