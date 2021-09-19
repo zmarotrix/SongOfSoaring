@@ -22,6 +22,7 @@ import { zzstatic2 } from 'Z64Lib/API/Utilities/zzstatic2';
 import { SCENES, Scenes } from './OoTSceneEnum';
 import { Sound } from 'modloader64_api/Sound/sfml_audio';
 import { SmartBuffer } from 'smart-buffer';
+import { ISongOfSoaringClient } from './SongOfSoaring';
 
 interface OwlData {
     id: number;
@@ -36,7 +37,7 @@ interface OwlData {
 
 const EMPTY_OWL_DATA: Buffer = Buffer.alloc(2, 0);
 
-export default class SongOfSoaringClient {
+export default class SongOfSoaringClient implements ISongOfSoaringClient {
     @ModLoaderAPIInject()
     ModLoader!: IModLoaderAPI;
     @InjectCore()
