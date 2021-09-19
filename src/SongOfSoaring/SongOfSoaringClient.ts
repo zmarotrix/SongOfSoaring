@@ -1,7 +1,7 @@
 import { InjectCore } from 'modloader64_api/CoreInjection';
 import { IModLoaderAPI } from 'modloader64_api/IModLoaderAPI';
 import { ModLoaderAPIInject } from "modloader64_api/ModLoaderAPIInjector";
-import { Init, onCreateResources, onViUpdate, Postinit } from "modloader64_api/PluginLifecycle";
+import { Init, onCreateResources, onTick, onViUpdate, Postinit } from "modloader64_api/PluginLifecycle";
 import { StyleVar, WindowFlags } from 'modloader64_api/Sylvain/ImGui';
 import { IZ64Main } from 'Z64Lib/API/Common/IZ64Main';
 import * as fs from 'fs';
@@ -174,6 +174,11 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
     onSaveLoad() {
         this.saveLoaded = true;
         this.owlData = this.ModLoader.emulator.rdramReadBuffer(SAVE_DATA_POINTER, 2);
+    }
+
+    @onTick()
+    onTick(){
+        this.owlData.writeUInt16BE(this.ModLoader.emulator.rdramRead16(SAVE_DATA_POINTER), 0);
     }
 
     @EventHandler(Z64.OotEvents.ON_SCENE_CHANGE)
