@@ -1,0 +1,13 @@
+{
+  "name": "SongOfSoaring",
+  "version": "1.0.0",
+   "core": "Z64Lib",
+  "description": "fuck",
+  "main": "SongOfSoaring.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Maro",
+  "license": "ISC"
+}

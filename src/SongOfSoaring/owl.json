@@ -1,0 +1,254 @@
+[
+  {
+    "id": 0,
+    "scene": [82,82],
+    "mapLoc": {
+      "x": 0,
+      "y": 0
+    },
+    "childStatueSpawn": {
+      "type": "Buffer",
+      "data": "base64:xEW7sgAAAABCiQAA"
+    },
+    "childStatueRot": {
+      "type": "Buffer",
+      "data": "base64:AAAAAAAA"
+    },
+    "adultStatueSpawn": {
+      "type": "Buffer",
+      "data": "base64:xEW7sgAAAABCiQAA"
+    },
+    "adultStatueRot": {
+      "type": "Buffer",
+      "data": "base64:AAAAAAAA"
+    },
+    "isConfigured": [
+      false,
+      true
+    ]
+  },
+  {
+    "id": 1,
+    "scene": [85,85],
+    "mapLoc": {
+      "x": 0,
+      "y": 0
+    },
+    "childStatueSpawn": {
+      "type": "Buffer",
+      "data": "base64:w9YaLkO+AADErRAA"
+    },
+    "childStatueRot": {
+      "type": "Buffer",
+      "data": "base64:AAAAAAAA"
+    },
+    "adultStatueSpawn": {
+      "type": "Buffer",
+      "data": "base64:w9YaLkO+AADErRAA"
+    },
+    "adultStatueRot": {
+      "type": "Buffer",
+      "data": "base64:AAAAAAAA"
+    },
+    "isConfigured": [
+      false,
+      true
+    ]
+  },
+  {
+    "id": 2,
+    "scene": [88,88],
+    "mapLoc": {
+      "x": 0,
+      "y": 0
+    },
+    "childStatueSpawn": {
+      "type": "Buffer",
+      "data": "base64:RFmA30RWQADEx+US"
+    },
+    "childStatueRot": {
+      "type": "Buffer",
+      "data": "base64:AADjCAAA"
+    },
+    "adultStatueSpawn": {
+      "type": "Buffer",
+      "data": "base64:RFmA30RWQADEx+US"
+    },
+    "adultStatueRot": {
+      "type": "Buffer",
+      "data": "base64:AADjCAAA"
+    },
+    "isConfigured": [
+      false,
+      true
+    ]
+  },
+  {
+    "id": 3,
+    "scene": [92,92],
+    "mapLoc": {
+      "x": 0,
+      "y": 0
+    },
+    "childStatueSpawn": {
+      "type": "Buffer",
+      "data": "base64:xLdv0UJAAADDMlzm"
+    },
+    "childStatueRot": {
+      "type": "Buffer",
+      "data": "base64:AAD+nwAA"
+    },
+    "adultStatueSpawn": {
+      "type": "Buffer",
+      "data": "base64:xLdv0UJAAADDMlzm"
+    },
+    "adultStatueRot": {
+      "type": "Buffer",
+      "data": "base64:AAD+nwAA"
+    },
+    "isConfigured": [
+      false,
+      true
+    ]
+  },
+  {
+    "id": 4,
+    "scene": [90,90],
+    "mapLoc": {
+      "x": 0,
+      "y": 0
+    },
+    "childStatueSpawn": {
+      "type": "Buffer",
+      "data": "base64:xP6VFELhWihCTEn0"
+    },
+    "childStatueRot": {
+      "type": "Buffer",
+      "data": "base64:AACBIAAA"
+    },
+    "adultStatueSpawn": {
+      "type": "Buffer",
+      "data": "base64:xP6VFELhWihCTEn0"
+    },
+    "adultStatueRot": {
+      "type": "Buffer",
+      "data": "base64:AACBIAAA"
+    },
+    "isConfigured": [
+      false,
+      true
+    ]
+  },
+  {
+    "id": 5,
+    "scene": [87,87],
+    "mapLoc": {
+      "x": 0,
+      "y": 0
+    },
+    "childStatueSpawn": {
+      "type": "Buffer",
+      "data": "base64:RKWQAMSYQABFel9y"
+    },
+    "childStatueRot": {
+      "type": "Buffer",
+      "data": "base64:AADAAAAA"
+    },
+    "adultStatueSpawn": {
+      "type": "Buffer",
+      "data": "base64:RKWQAMSYQABFel9y"
+    },
+    "adultStatueRot": {
+      "type": "Buffer",
+      "data": "base64:AADAAAAA"
+    },
+    "isConfigured": [
+      false,
+      true
+    ]
+  },
+  {
+    "id": 6,
+    "scene": [99,99],
+    "mapLoc": {
+      "x": 0,
+      "y": 0
+    },
+    "childStatueSpawn": {
+      "type": "Buffer",
+      "data": "base64:QxoH/wAAAADFFHgA"
+    },
+    "childStatueRot": {
+      "type": "Buffer",
+      "data": "base64:AAAAAAAA"
+    },
+    "adultStatueSpawn": {
+      "type": "Buffer",
+      "data": "base64:QxoH/wAAAADFFHgA"
+    },
+    "adultStatueRot": {
+      "type": "Buffer",
+      "data": "base64:AAAAAAAA"
+    },
+    "isConfigured": [
+      false,
+      true
+    ]
+  },
+  {
+    "id": 7,
+    "scene": [100,95],
+    "mapLoc": {
+      "x": 0,
+      "y": 0
+    },
+    "childStatueSpawn": {
+      "type": "Buffer",
+      "data": "base64:w62jbUSIfXVFQR+e"
+    },
+    "childStatueRot": {
+      "type": "Buffer",
+      "data": "base64:AAAiygAA"
+    },
+    "adultStatueSpawn": {
+      "type": "Buffer",
+      "data": "base64:w+G7XESZwitE/TZg"
+    },
+    "adultStatueRot": {
+      "type": "Buffer",
+      "data": "base64:AAAKUwAA"
+    },
+    "isConfigured": [
+      true,
+      true
+    ]
+  },
+  {
+    "id": 8,
+    "scene": [96,96],
+    "mapLoc": {
+      "x": 0,
+      "y": 0
+    },
+    "childStatueSpawn": {
+      "type": "Buffer",
+      "data": "base64:xLazsES1GWjDNAFv"
+    },
+    "childStatueRot": {
+      "type": "Buffer",
+      "data": "base64:AACr+wAA"
+    },
+    "adultStatueSpawn": {
+      "type": "Buffer",
+      "data": "base64:xLazsES1GWjDNAFv"
+    },
+    "adultStatueRot": {
+      "type": "Buffer",
+      "data": "base64:AACr+wAA"
+    },
+    "isConfigured": [
+      false,
+      true
+    ]
+  }
+]
