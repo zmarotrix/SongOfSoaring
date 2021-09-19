@@ -1,7 +1,7 @@
 import { InjectCore } from 'modloader64_api/CoreInjection';
 import { IModLoaderAPI } from 'modloader64_api/IModLoaderAPI';
 import { ModLoaderAPIInject } from "modloader64_api/ModLoaderAPIInjector";
-import { Init, onCreateResources, onViUpdate, Postinit } from "modloader64_api/PluginLifecycle";
+import { Init, onCreateResources, onTick, onViUpdate, Postinit } from "modloader64_api/PluginLifecycle";
 import { StyleVar, WindowFlags } from 'modloader64_api/Sylvain/ImGui';
 import { IZ64Main } from 'Z64Lib/API/Common/IZ64Main';
 import * as fs from 'fs';
@@ -30,6 +30,10 @@ interface OwlData {
     childStatueRot: Buffer;
     adultStatueSpawn: Buffer;
     adultStatueRot: Buffer;
+    adultSpawnPos: Buffer;
+    adultSpawnRot: Buffer;
+    childSpawnPos: Buffer;
+    childSpawnRot: Buffer;
     isConfigured: Array<boolean>;
 }
 
@@ -42,7 +46,7 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
     @InjectCore()
     core!: IZ64Main;
     Input!: Z64Input;
-    
+
 
     songPlayed: boolean = false;
     owlData: Buffer = Buffer.alloc(2, 0);
@@ -67,95 +71,60 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
     locations: Array<OwlData> = [];
     model: number = 0;
     currentOwl: IActor | undefined;
+    warpingHandler: string | undefined;
 
     Kakariko: IWarpLocation = {
         mapLoc: { x: 658, y: 248 },
-        childStatueSpawn: { x: 0, y: 0, z: 0 },
-        childStatueRot: { x: 0, y: 0, z: 0 },
-        adultStatueSpawn: { x: 0, y: 0, z: 0 },
-        adultStatueRot: { x: 0, y: 0, z: 0 },
-        entranceIndex: 0x00DB,
-        sceneIndex: Scenes.get(SCENES.kakariko_village)!.id
+        entranceIndex: [0x00DB, 0x00DB],
+        sceneIndex: [Scenes.get(SCENES.kakariko_village)!.id, Scenes.get(SCENES.kakariko_village)!.id]
     };
 
     GerudoRiver: IWarpLocation = {
         mapLoc: { x: 230, y: 380 },
-        childStatueSpawn: { x: 0, y: 0, z: 0 },
-        childStatueRot: { x: 0, y: 0, z: 0 },
-        adultStatueSpawn: { x: 0, y: 0, z: 0 },
-        adultStatueRot: { x: 0, y: 0, z: 0 },
-        entranceIndex: 0x0117,
-        sceneIndex: Scenes.get(SCENES.gerudo_valley)!.id
+        entranceIndex: [0x0117, 0x0117],
+        sceneIndex: [Scenes.get(SCENES.gerudo_valley)!.id, Scenes.get(SCENES.gerudo_valley)!.id]
     };
 
     Fishing: IWarpLocation = {
         mapLoc: { x: 460, y: 800 },
-        childStatueSpawn: { x: 0, y: 0, z: 0 },
-        childStatueRot: { x: 0, y: 0, z: 0 },
-        adultStatueSpawn: { x: 0, y: 0, z: 0 },
-        adultStatueRot: { x: 0, y: 0, z: 0 },
-        entranceIndex: 0x0102,
-        sceneIndex: Scenes.get(SCENES.lake_hylia)!.id
+        entranceIndex: [0x0102, 0x0102],
+        sceneIndex: [Scenes.get(SCENES.lake_hylia)!.id, Scenes.get(SCENES.lake_hylia)!.id]
     };
 
     GoronCity: IWarpLocation = {
         mapLoc: { x: 650, y: 100 },
-        childStatueSpawn: { x: 0, y: 0, z: 0 },
-        childStatueRot: { x: 0, y: 0, z: 0 },
-        adultStatueSpawn: { x: 0, y: 0, z: 0 },
-        adultStatueRot: { x: 0, y: 0, z: 0 },
-        entranceIndex: 0x014D,
-        sceneIndex: Scenes.get(SCENES.goron_city)!.id
+        entranceIndex: [0x013D, 0x013D],
+        sceneIndex: [Scenes.get(SCENES.death_mountain_trail)!.id, Scenes.get(SCENES.death_mountain_trail)!.id]
     };
 
     DesertColossus: IWarpLocation = {
         mapLoc: { x: 50, y: 250 },
-        childStatueSpawn: { x: 0, y: 0, z: 0 },
-        childStatueRot: { x: 0, y: 0, z: 0 },
-        adultStatueSpawn: { x: 0, y: 0, z: 0 },
-        adultStatueRot: { x: 0, y: 0, z: 0 },
-        entranceIndex: 0x0123,
-        sceneIndex: Scenes.get(SCENES.desert_colossus)!.id
+        entranceIndex: [0x0123, 0x0123],
+        sceneIndex: [Scenes.get(SCENES.desert_colossus)!.id, Scenes.get(SCENES.desert_colossus)!.id]
     };
 
     KokiriForest: IWarpLocation = {
         mapLoc: { x: 800, y: 575 },
-        childStatueSpawn: { x: 0, y: 0, z: 0 },
-        childStatueRot: { x: 0, y: 0, z: 0 },
-        adultStatueSpawn: { x: 0, y: 0, z: 0 },
-        adultStatueRot: { x: 0, y: 0, z: 0 },
-        entranceIndex: 0x0211,
-        sceneIndex: Scenes.get(SCENES.kokiri_forest)!.id
+        entranceIndex: [0x0211, 0x0211],
+        sceneIndex: [Scenes.get(SCENES.kokiri_forest)!.id, Scenes.get(SCENES.kokiri_forest)!.id]
     };
 
     LonLon: IWarpLocation = {
         mapLoc: { x: 475, y: 425 },
-        childStatueSpawn: { x: 0, y: 0, z: 0 },
-        childStatueRot: { x: 0, y: 0, z: 0 },
-        adultStatueSpawn: { x: 0, y: 0, z: 0 },
-        adultStatueRot: { x: 0, y: 0, z: 0 },
-        entranceIndex: 0x0157,
-        sceneIndex: Scenes.get(SCENES.lon_lon_ranch)!.id
+        entranceIndex: [0x0157, 0x0157],
+        sceneIndex: [Scenes.get(SCENES.lon_lon_ranch)!.id, Scenes.get(SCENES.lon_lon_ranch)!.id]
     };
 
     ZoraDomain: IWarpLocation = {
         mapLoc: { x: 930, y: 300 },
-        childStatueSpawn: { x: 0, y: 0, z: 0 },
-        childStatueRot: { x: 0, y: 0, z: 0 },
-        adultStatueSpawn: { x: 0, y: 0, z: 0 },
-        adultStatueRot: { x: 0, y: 0, z: 0 },
-        entranceIndex: 0x01A1,
-        sceneIndex: Scenes.get(SCENES.zora_domain)!.id
+        entranceIndex: [0x01A1, 0x01A1],
+        sceneIndex: [Scenes.get(SCENES.zora_domain)!.id, Scenes.get(SCENES.zora_domain)!.id]
     };
 
     CastleField: IWarpLocation = {
         mapLoc: { x: 515, y: 130 },
-        childStatueSpawn: { x: 0, y: 0, z: 0 },
-        childStatueRot: { x: 0, y: 0, z: 0 },
-        adultStatueSpawn: { x: 0, y: 0, z: 0 },
-        adultStatueRot: { x: 0, y: 0, z: 0 },
-        entranceIndex: 0x0138,
-        sceneIndex: Scenes.get(SCENES.hyrule_castle)!.id
+        entranceIndex: [0x013A, 0x0138],
+        sceneIndex: [Scenes.get(SCENES.ganon_castle_exterior)!.id, Scenes.get(SCENES.hyrule_castle)!.id]
     };
 
     warpLocations: IWarpLocation[] = [
@@ -176,6 +145,11 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
         this.owlData = this.ModLoader.emulator.rdramReadBuffer(SAVE_DATA_POINTER, 2);
     }
 
+    @onTick()
+    onTick() {
+        this.owlData.writeUInt16BE(this.ModLoader.emulator.rdramRead16(SAVE_DATA_POINTER), 0);
+    }
+
     @EventHandler(Z64.OotEvents.ON_SCENE_CHANGE)
     onSceneChange(scene: number) {
         this.currentOwl = undefined;
@@ -193,8 +167,8 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
             this.owlStatue = evt.result;
             let temp = this.ModLoader.emulator.rdramReadBuffer(evt.result.pointer, evt.result.size);
             let zz = new zzstatic2();
-            let model = temp.slice(0x5A0);
-            zz.repoint(model, evt.result.pointer + 0x5A0);
+            let model = temp.slice(0x5F0);
+            zz.repoint(model, evt.result.pointer + 0x5F0);
             this.ModLoader.emulator.rdramWriteBuffer(evt.result.pointer, temp);
             this.model = evt.result.pointer;
         }
@@ -211,12 +185,13 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
     }
 
     transport(warp: IWarpLocation) {
+        console.log(warp);
         this.currentOwl = undefined;
         this.ModLoader.emulator.rdramWrite32(0x8011B934, 0x3);
         let sb = new SmartBuffer();
         let loc: OwlData | undefined;
         for (let i = 0; i < this.locations.length; i++) {
-            if (this.locations[i].scene[this.core.OOT!.save.age] === warp.sceneIndex) {
+            if (this.locations[i].scene[this.core.OOT!.save.age] === warp.sceneIndex[this.core.OOT!.save.age]) {
                 loc = this.locations[i];
                 break;
             }
@@ -224,26 +199,12 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
         if (loc === undefined) {
             return;
         }
-
-        let s2rad = Math.PI / 32768.0;
-        let rad2s = 1 / s2rad;
-
-        let rawpos: Buffer = this.core.OOT!.save.age === 0 ? loc.adultStatueSpawn : loc.childStatueSpawn;
-        let rawrot: Buffer = this.core.OOT!.save.age === 0 ? loc.adultStatueRot : loc.childStatueRot;
-        let px = rawpos.readFloatBE(0);
-        let py = rawpos.readFloatBE(4);
-        let pz = rawpos.readFloatBE(8);
-        let ry = rawrot.readInt16BE(2);
-        ry *= s2rad;
-
-        let fwd: Vector3 = new Vector3(Math.sin(ry), 0, Math.cos(ry)); // normal direction the owl is facing
-
-        sb.writeFloatBE(px); // x
-        sb.writeFloatBE(py); // y
-        sb.writeFloatBE(pz); // z
-        sb.writeUInt16BE(Math.floor(ry * rad2s)); // yaw
+        let pos = this.core.OOT!.save.age === 0 ? loc.adultSpawnPos : loc.childSpawnPos;
+        let rot = this.core.OOT!.save.age === 0 ? loc.adultSpawnRot : loc.childSpawnRot;
+        sb.writeBuffer(pos);
+        sb.writeInt16BE(0); // yaw
         sb.writeUInt16BE(0x02FF); // player variable
-        sb.writeUInt16BE(warp.entranceIndex); // entrance index
+        sb.writeUInt16BE(warp.entranceIndex[this.core.OOT!.save.age]); // entrance index
         sb.writeUInt8(0); // room id
         sb.writeUInt8(0x28); // data?
         sb.writeUInt32BE(0); // flag shit 1
@@ -252,7 +213,15 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
             this.ModLoader.emulator.rdramWriteBuffer(0x8011B938 + (i * 0x1C), sb.toBuffer());
         }
 
-        this.core.OOT!.commandBuffer.runWarp(warp.entranceIndex, 0, undefined, 0x08);
+        this.core.OOT!.commandBuffer.runWarp(warp.entranceIndex[this.core.OOT!.save.age], 0, undefined, 0x08).then(() => {
+            this.warpingHandler = this.ModLoader.utils.setIntervalFrames(() => {
+                if (this.core.OOT!.global.scene === (loc!.scene[this.core.OOT!.save.age])) {
+                    this.core.OOT!.link.rotation.setRawRot(rot);
+                    this.ModLoader.utils.clearIntervalFrames(this.warpingHandler!);
+                    this.warpingHandler = undefined;
+                }
+            }, 1);
+        });
     }
 
     getForwardBit(buf: Buffer, start: number = 0): number {
@@ -308,16 +277,31 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
             this.songPlayed = true;
         }
 
+        // Uncomment me if den messed up any of the spawn locations.
+        /* if (this.ModLoader.ImGui.begin("DEBUG2###Maro:DEBUG2")) {
+            if (this.ModLoader.ImGui.smallButton("FUCK")) {
+                let a: any = {
+                    adultSpawnPos: this.core.OOT!.link.position.getRawPos(),
+                    adultSpawnRot: this.core.OOT!.link.rotation.getRawRot(),
+                    childSpawnPos: this.core.OOT!.link.position.getRawPos(),
+                    childSpawnRot: this.core.OOT!.link.rotation.getRawRot()
+                };
+                console.log(JSON.stringify(a));
+            }
+        } */
+
+        this.ModLoader.ImGui.end();
+
         if (this.songPlayed) {
 
             if (this.onOpen) {
                 this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_PauseMenu_Open.wav")).play();
                 this.cursorPos = 0;
 
-                if (!this.owlData.equals(EMPTY_OWL_DATA)){
+                if (!this.owlData.equals(EMPTY_OWL_DATA)) {
                     let bits = this.ModLoader.emulator.rdramReadBitsBuffer(SAVE_DATA_POINTER, 2);
-                    for (let i = 0; i < this.warpLocations.length; i++){
-                        if (bits[i] === 1){
+                    for (let i = 0; i < this.warpLocations.length; i++) {
+                        if (bits[i] === 1) {
                             this.cursorPos = i;
                             break;
                         }
@@ -342,13 +326,13 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
 
                 this.ModLoader.ImGui.getWindowDrawList().addImage(this.map.id, { x: 0, y: 0 }, { x: this.ModLoader.ImGui.getWindowWidth(), y: this.ModLoader.ImGui.getWindowHeight() });
 
-                
+
                 for (let i = 0; i < this.warpLocations.length; i++) {
                     if (i < bitwise.byte.read(this.owlData[0] as UInt8).length) {
                         if (Boolean(bitwise.byte.read(this.owlData[0] as UInt8)[i])) {
                             this.placeOnMap(this.owl, this.warpLocations[i].mapLoc);
                         }
-                    } 
+                    }
                     if (Boolean(bitwise.byte.read(this.owlData[1] as UInt8)[0])) {
                         this.placeOnMap(this.owl, this.warpLocations[8].mapLoc);
                     }
@@ -481,12 +465,8 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
 
 interface IWarpLocation {
     mapLoc: vec2;
-    childStatueSpawn: vec3;
-    childStatueRot: vec3;
-    adultStatueSpawn: vec3;
-    adultStatueRot: vec3;
-    entranceIndex: number;
-    sceneIndex: number;
+    entranceIndex: number[];
+    sceneIndex: number[];
 }
 
 

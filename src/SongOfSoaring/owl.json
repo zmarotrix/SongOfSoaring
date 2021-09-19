@@ -1,11 +1,10 @@
 [
   {
     "id": 0,
-    "scene": [82,82],
-    "mapLoc": {
-      "x": 0,
-      "y": 0
-    },
+    "scene": [
+      82,
+      82
+    ],
     "childStatueSpawn": {
       "type": "Buffer",
       "data": "base64:xEW7sgAAAABCiQAA"
@@ -21,6 +20,22 @@
     "adultStatueRot": {
       "type": "Buffer",
       "data": "base64:AAAAAAAA"
+    },
+    "adultSpawnPos": {
+      "type": "Buffer",
+      "data": "base64:xEV32QAAAABDB1Yq"
+    },
+    "adultSpawnRot": {
+      "type": "Buffer",
+      "data": "base64:AACAAAAA"
+    },
+    "childSpawnPos": {
+      "type": "Buffer",
+      "data": "base64:xEV32QAAAABDB1Yq"
+    },
+    "childSpawnRot": {
+      "type": "Buffer",
+      "data": "base64:AACAAAAA"
     },
     "isConfigured": [
       false,
@@ -29,11 +44,10 @@
   },
   {
     "id": 1,
-    "scene": [85,85],
-    "mapLoc": {
-      "x": 0,
-      "y": 0
-    },
+    "scene": [
+      85,
+      85
+    ],
     "childStatueSpawn": {
       "type": "Buffer",
       "data": "base64:w9YaLkO+AADErRAA"
@@ -49,6 +63,22 @@
     "adultStatueRot": {
       "type": "Buffer",
       "data": "base64:AAAAAAAA"
+    },
+    "adultSpawnPos": {
+      "type": "Buffer",
+      "data": "base64:w9WpFkO+AADEpb7+"
+    },
+    "adultSpawnRot": {
+      "type": "Buffer",
+      "data": "base64:AACBcAAA"
+    },
+    "childSpawnPos": {
+      "type": "Buffer",
+      "data": "base64:w9WpFkO+AADEpb7+"
+    },
+    "childSpawnRot": {
+      "type": "Buffer",
+      "data": "base64:AACBcAAA"
     },
     "isConfigured": [
       false,
@@ -57,11 +87,10 @@
   },
   {
     "id": 2,
-    "scene": [88,88],
-    "mapLoc": {
-      "x": 0,
-      "y": 0
-    },
+    "scene": [
+      88,
+      88
+    ],
     "childStatueSpawn": {
       "type": "Buffer",
       "data": "base64:RFmA30RWQADEx+US"
@@ -77,6 +106,22 @@
     "adultStatueRot": {
       "type": "Buffer",
       "data": "base64:AADjCAAA"
+    },
+    "adultSpawnPos": {
+      "type": "Buffer",
+      "data": "base64:RFEP5ERWQADEwuem"
+    },
+    "adultSpawnRot": {
+      "type": "Buffer",
+      "data": "base64:AABjCgAA"
+    },
+    "childSpawnPos": {
+      "type": "Buffer",
+      "data": "base64:RFEP5ERWQADEwuem"
+    },
+    "childSpawnRot": {
+      "type": "Buffer",
+      "data": "base64:AABjCgAA"
     },
     "isConfigured": [
       false,
@@ -85,11 +130,10 @@
   },
   {
     "id": 3,
-    "scene": [92,92],
-    "mapLoc": {
-      "x": 0,
-      "y": 0
-    },
+    "scene": [
+      92,
+      92
+    ],
     "childStatueSpawn": {
       "type": "Buffer",
       "data": "base64:xLdv0UJAAADDMlzm"
@@ -105,6 +149,22 @@
     "adultStatueRot": {
       "type": "Buffer",
       "data": "base64:AAD+nwAA"
+    },
+    "adultSpawnPos": {
+      "type": "Buffer",
+      "data": "base64:xLd10kJAAADC3H1u"
+    },
+    "adultSpawnRot": {
+      "type": "Buffer",
+      "data": "base64:AAB+fQAA"
+    },
+    "childSpawnPos": {
+      "type": "Buffer",
+      "data": "base64:xLd10kJAAADC3H1u"
+    },
+    "childSpawnRot": {
+      "type": "Buffer",
+      "data": "base64:AAB+fQAA"
     },
     "isConfigured": [
       false,
@@ -113,11 +173,10 @@
   },
   {
     "id": 4,
-    "scene": [90,90],
-    "mapLoc": {
-      "x": 0,
-      "y": 0
-    },
+    "scene": [
+      90,
+      90
+    ],
     "childStatueSpawn": {
       "type": "Buffer",
       "data": "base64:xP6VFELhWihCTEn0"
@@ -133,6 +192,22 @@
     "adultStatueRot": {
       "type": "Buffer",
       "data": "base64:AACBIAAA"
+    },
+    "adultSpawnPos": {
+      "type": "Buffer",
+      "data": "base64:xP73w0LoGRvBLRWA"
+    },
+    "adultSpawnRot": {
+      "type": "Buffer",
+      "data": "base64:AAABIAAA"
+    },
+    "childSpawnPos": {
+      "type": "Buffer",
+      "data": "base64:xP73w0LoGRvBLRWA"
+    },
+    "childSpawnRot": {
+      "type": "Buffer",
+      "data": "base64:AAABIAAA"
     },
     "isConfigured": [
       false,
@@ -141,11 +216,10 @@
   },
   {
     "id": 5,
-    "scene": [87,87],
-    "mapLoc": {
-      "x": 0,
-      "y": 0
-    },
+    "scene": [
+      87,
+      87
+    ],
     "childStatueSpawn": {
       "type": "Buffer",
       "data": "base64:RKWQAMSYQABFel9y"
@@ -161,6 +235,22 @@
     "adultStatueRot": {
       "type": "Buffer",
       "data": "base64:AADAAAAA"
+    },
+    "adultSpawnPos": {
+      "type": "Buffer",
+      "data": "base64:RKBYAMSYQABFel9y"
+    },
+    "adultSpawnRot": {
+      "type": "Buffer",
+      "data": "base64:AABAAQAA"
+    },
+    "childSpawnPos": {
+      "type": "Buffer",
+      "data": "base64:RKBYAMSYQABFel9y"
+    },
+    "childSpawnRot": {
+      "type": "Buffer",
+      "data": "base64:AABAAQAA"
     },
     "isConfigured": [
       false,
@@ -169,11 +259,10 @@
   },
   {
     "id": 6,
-    "scene": [99,99],
-    "mapLoc": {
-      "x": 0,
-      "y": 0
-    },
+    "scene": [
+      99,
+      99
+    ],
     "childStatueSpawn": {
       "type": "Buffer",
       "data": "base64:QxoH/wAAAADFFHgA"
@@ -190,6 +279,22 @@
       "type": "Buffer",
       "data": "base64:AAAAAAAA"
     },
+    "adultSpawnPos": {
+      "type": "Buffer",
+      "data": "base64:Qxt1ZAAAAADFEKEw"
+    },
+    "adultSpawnRot": {
+      "type": "Buffer",
+      "data": "base64:AACAAAAA"
+    },
+    "childSpawnPos": {
+      "type": "Buffer",
+      "data": "base64:Qxt1ZAAAAADFEKEw"
+    },
+    "childSpawnRot": {
+      "type": "Buffer",
+      "data": "base64:AACAAAAA"
+    },
     "isConfigured": [
       false,
       true
@@ -197,11 +302,10 @@
   },
   {
     "id": 7,
-    "scene": [100,95],
-    "mapLoc": {
-      "x": 0,
-      "y": 0
-    },
+    "scene": [
+      100,
+      95
+    ],
     "childStatueSpawn": {
       "type": "Buffer",
       "data": "base64:w62jbUSIfXVFQR+e"
@@ -218,6 +322,22 @@
       "type": "Buffer",
       "data": "base64:AAAKUwAA"
     },
+    "adultSpawnPos": {
+      "type": "Buffer",
+      "data": "base64:w9okukSZUghFAW+V"
+    },
+    "adultSpawnRot": {
+      "type": "Buffer",
+      "data": "base64:AACO+gAA"
+    },
+    "childSpawnPos": {
+      "type": "Buffer",
+      "data": "base64:w5dgZESIbC5FQzdY"
+    },
+    "childSpawnRot": {
+      "type": "Buffer",
+      "data": "base64:AACjOgAA"
+    },
     "isConfigured": [
       true,
       true
@@ -225,11 +345,10 @@
   },
   {
     "id": 8,
-    "scene": [96,96],
-    "mapLoc": {
-      "x": 0,
-      "y": 0
-    },
+    "scene": [
+      96,
+      96
+    ],
     "childStatueSpawn": {
       "type": "Buffer",
       "data": "base64:xLazsES1GWjDNAFv"
@@ -245,6 +364,22 @@
     "adultStatueRot": {
       "type": "Buffer",
       "data": "base64:AACr+wAA"
+    },
+    "adultSpawnPos": {
+      "type": "Buffer",
+      "data": "base64:xL3aYUS1IADDUeNE"
+    },
+    "adultSpawnRot": {
+      "type": "Buffer",
+      "data": "base64:AAAr6gAA"
+    },
+    "childSpawnPos": {
+      "type": "Buffer",
+      "data": "base64:xL3aYUS1IADDUeNE"
+    },
+    "childSpawnRot": {
+      "type": "Buffer",
+      "data": "base64:AAAr6gAA"
     },
     "isConfigured": [
       false,
