@@ -256,14 +256,9 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
     }
 
     getForwardBit(buf: Buffer, start: number = 0): number {
-        let bits: number[] = [];
-        for (let i = 0; i < buf.byteLength; i++) {
-            let byte = buf[i];
-            let _b = bitwise.byte.read(byte as UInt8);
-            bits.push(..._b);
-        }
-        if (start > bits.length) start = 0;
-        for (let i = start; i < bits.length; i++) {
+        let bits = this.ModLoader.emulator.rdramReadBitsBuffer(SAVE_DATA_POINTER, 2);
+        if (start > bits.byteLength) start = 0;
+        for (let i = start; i < bits.byteLength; i++) {
             if (bits[i] === 1) {
                 return i;
             }
@@ -272,19 +267,14 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
     }
 
     getBackwardBit(buf: Buffer, start: number = 0) {
-        let bits: number[] = [];
-        for (let i = 0; i < buf.byteLength; i++) {
-            let byte = buf[i];
-            let _b = bitwise.byte.read(byte as UInt8);
-            bits.push(..._b);
-        }
-        if (start === 0) start = bits.length - 1;
+        let bits = this.ModLoader.emulator.rdramReadBitsBuffer(SAVE_DATA_POINTER, 2);
+        if (start === 0) start = bits.byteLength - 1;
         for (let i = start; i > 0; i--) {
             if (bits[i] === 1) {
                 return i;
             }
         }
-        return this.getBackwardBit(buf, bits.length - 1);
+        return this.getBackwardBit(buf, bits.byteLength - 1);
     }
 
     @onCreateResources()
@@ -324,26 +314,16 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
                 this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_PauseMenu_Open.wav")).play();
                 this.cursorPos = 0;
 
-
-                if (!this.owlData.equals(EMPTY_OWL_DATA)) {
-                    for (let i = 0; i < this.warpLocations.length; i++) {
-                        if (i < bitwise.byte.read(this.owlData[0] as UInt8).length) {
-                            if (Boolean(bitwise.byte.read(this.owlData[0] as UInt8)[i])) {
-                                this.cursorPos = i;
-                                break;
-                            }
-
-                            if (Boolean(bitwise.byte.read(this.owlData[1] as UInt8)[0])) {
-                                this.cursorPos = i;
-                                break;
-                            }
+                if (!this.owlData.equals(EMPTY_OWL_DATA)){
+                    let bits = this.ModLoader.emulator.rdramReadBitsBuffer(SAVE_DATA_POINTER, 2);
+                    for (let i = 0; i < this.warpLocations.length; i++){
+                        if (bits[i] === 1){
+                            this.cursorPos = i;
+                            break;
                         }
                     }
-                    this.placeOnMap(this.cursor, this.warpLocations[this.cursorPos].mapLoc)
                 }
-                else {
-                    //oh god idk lol
-                }
+
                 this.onOpen = false;
             }
 
