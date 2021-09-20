@@ -21,6 +21,7 @@ import { SCENES, Scenes } from './OoTSceneEnum';
 import { Sound } from 'modloader64_api/Sound/sfml_audio';
 import { SmartBuffer } from 'smart-buffer';
 import { ISongOfSoaringClient } from './SongOfSoaring';
+import { Scene } from 'Z64Lib/API/OoT/OOTAPI';
 
 interface OwlData {
     id: number;
@@ -59,6 +60,7 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
     onOpen: boolean = true;
     saveLoaded: boolean = false;
     inputstall: boolean = false;
+    hasWarped: number = 0;
     selection!: vec2;
     kakPos = { x: 100, y: 100 };
     mapSize = { x: 0, y: 0 };
@@ -148,6 +150,14 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
     @onTick()
     onTick() {
         this.owlData.writeUInt16BE(this.ModLoader.emulator.rdramRead16(SAVE_DATA_POINTER), 0);
+        if(!(this.hasWarped <= 0))
+        {
+            if(this.hasWarped == 1)
+            {
+                this.ModLoader.logger.error(`ENDING HASWARPED`);
+            }
+            this.hasWarped--;
+        }
     }
 
     @EventHandler(Z64.OotEvents.ON_SCENE_CHANGE)
@@ -157,6 +167,7 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
             if (this.locations[i].scene[this.core.OOT!.save.age] === scene) {
                 this.spawnOwl(i)
                 break;
+
             }
         }
     }
@@ -215,13 +226,14 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
 
         this.core.OOT!.commandBuffer.runWarp(warp.entranceIndex[this.core.OOT!.save.age], 0, undefined, 0x08).then(() => {
             this.warpingHandler = this.ModLoader.utils.setIntervalFrames(() => {
-                if (this.core.OOT!.global.scene === (loc!.scene[this.core.OOT!.save.age])) {
+                if (this.core.OOT!.global.scene === (loc!.scene[this.core.OOT!.save.age]) && this.core.OOT!.global.scene_framecount < 20) {
                     this.core.OOT!.link.rotation.setRawRot(rot);
                     this.ModLoader.utils.clearIntervalFrames(this.warpingHandler!);
                     this.warpingHandler = undefined;
                 }
             }, 1);
         });
+        this.hasWarped = 90;
     }
 
     getForwardBit(buf: Buffer, start: number = 0): number {
@@ -270,6 +282,21 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
 
     @onViUpdate() // Once per vertical interrupt (refresh, buffer swap)
     onViUpdate() {
+        if (this.ModLoader.ImGui.begin(`CAPTURE window`)) {
+            if (this.ModLoader.ImGui.button(`CAPTURE`)) {
+                this.ModLoader.logger.info(`For SCENE: ${this.core.OOT?.global.scene}\n
+${this.ModLoader.emulator.rdramReadBuffer(0x801C86D0, 512).toString('hex')}\n`);
+
+            } this.ModLoader.ImGui.end();
+        }
+
+        if(this.hasWarped != 0 && this.core.OOT!.global.scene_framecount < 200)
+        {
+            this.ModLoader.emulator.rdramWriteBuffer(0x801C86D0, Buffer.from(`c3d5a91643cf5c29c4a5befec3d360bd43dab2cfc49594c8bbc78bdf3f7c27f8be30a462c3d360bd43dab2cfc49594c8000000000000000000000000801c84a0801daa30c3d5a91643be0000c4a5befe00008170000041bc0000000000000000000000000000000000000000000000003f8000004180000041c000003d4ccccd3d4ccccd3d4ccccd0000000043035fe80000000000000000420ae14800000000000000000000000000000000427000003f19999943be0000000000003f8000000000000000000000ffffffffffffffff0000000000000000000000000000000000000000f8ee81720000f8ee817200000007000100000032000c000000970000000000000001ffff0032000000000001ffff00000000ffff7fff00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003f80000000000000000000000000000000000000000000000000000000000000801c84a00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004120000041800000412000003d4ccccd3d4ccccd3d4ccccd000000000000000000000000`, "hex"));
+        }
+
+
+
         //@ts-ignore
         this.Input.step(this.core.OOT?.global.framecount); // required for Input
 
@@ -289,8 +316,6 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
                 console.log(JSON.stringify(a));
             }
         } */
-
-        this.ModLoader.ImGui.end();
 
         if (this.songPlayed) {
 
@@ -345,11 +370,6 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
                         this.songPlayed = false;
                         return;
                     }
-
-                    if (this.cursorPos == this.warpLocations.length - 1) {
-                        this.cursorPos = 0;
-                        this.blip.play();
-                    }
                     else {
                         this.blip.play();
                         this.cursorPos = this.getForwardBit(this.owlData, this.cursorPos + 1);
@@ -364,11 +384,6 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
                         this.indexWarpCrash();
                         this.songPlayed = false;
                         return;
-                    }
-
-                    if (this.cursorPos == 0) {
-                        this.blip.play();
-                        this.cursorPos = this.warpLocations.length - 1;
                     }
                     else {
                         this.blip.play();
