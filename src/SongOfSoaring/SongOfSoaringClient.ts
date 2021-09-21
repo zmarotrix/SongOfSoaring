@@ -23,6 +23,9 @@ import { SmartBuffer } from 'smart-buffer';
 import { ISongOfSoaringClient } from './SongOfSoaring';
 import { Scene } from 'Z64Lib/API/OoT/OOTAPI';
 
+const s2rad = Math.PI / 32768.0;
+const rad2s = 32768.0 / Math.PI;
+
 interface OwlData {
     id: number;
     scene: Array<number>;
@@ -67,6 +70,7 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
     mapScale: number = 1;
     cursorPos!: number;
     mapPos = { x: 0, y: 0 };
+    lastWarp!: IWarpLocation;
 
     id: number_ref = [0];
     owlStatue!: IOvlPayloadResult;
@@ -140,6 +144,7 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
         this.CastleField,       // 7 -
         this.GoronCity          // 8 -
     ];
+    
 
     @EventHandler(Z64.OotEvents.ON_SAVE_LOADED)
     onSaveLoad() {
@@ -150,11 +155,15 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
     @onTick()
     onTick() {
         this.owlData.writeUInt16BE(this.ModLoader.emulator.rdramRead16(SAVE_DATA_POINTER), 0);
-        if(!(this.hasWarped <= 0))
-        {
-            if(this.hasWarped == 1)
-            {
+        if (!(this.hasWarped <= 0)) {
+            if (this.hasWarped == 1) {
+                let fuck = Buffer.alloc(0xC, 0)
+                this.ModLoader.emulator.rdramWrite16((0x801C84A0 + 0x1E0 + 0x142), 1); // Camera Setting to Free
+                this.ModLoader.emulator.rdramWrite16((0x801C84A0 + 0x1E0 + 0x144), 0);
+                this.ModLoader.emulator.rdramWriteBuffer((0x801C84A0 + 0x1E0 + 0xF0), fuck);
+                this.ModLoader.emulator.rdramWriteBuffer((0x801C84A0 + 0x1E0 + 0x80), fuck);
                 this.ModLoader.logger.error(`ENDING HASWARPED`);
+
             }
             this.hasWarped--;
         }
@@ -212,8 +221,29 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
         }
         let pos = this.core.OOT!.save.age === 0 ? loc.adultSpawnPos : loc.childSpawnPos;
         let rot = this.core.OOT!.save.age === 0 ? loc.adultSpawnRot : loc.childSpawnRot;
+
+        let rawpos = this.core.OOT!.save.age === 0 ? loc.adultStatueSpawn : loc.childStatueSpawn;
+        let rawrot = this.core.OOT!.save.age === 0 ? loc.adultStatueRot : loc.childStatueRot;
+        let linkpos = new Vector3(rawpos.readFloatBE(0), rawpos.readFloatBE(4), rawpos.readFloatBE(8));
+        let ry = rawrot.readInt16BE(2) * s2rad;
+        linkpos = linkpos.plus(new Vector3(Math.sin(ry), 0, Math.cos(ry)).multiplyN(60))
+        ry = Math.floor(ry * rad2s)
+
+        pos.writeFloatBE(linkpos.x, 0)
+        pos.writeFloatBE(linkpos.y, 4)
+        pos.writeFloatBE(linkpos.z, 8)
+
+        if (Math.sign(ry) >= 0) {
+            ry = (ry - 0x8000) % 0x10000
+            rot.writeInt16BE(ry, 2)
+        }
+        else {
+            ry = (ry + 0x8000) % 0x10000
+            rot.writeInt16BE(ry, 2)
+        }
+
         sb.writeBuffer(pos);
-        sb.writeInt16BE(0); // yaw
+        sb.writeInt16BE(ry); // yaw
         sb.writeUInt16BE(0x02FF); // player variable
         sb.writeUInt16BE(warp.entranceIndex[this.core.OOT!.save.age]); // entrance index
         sb.writeUInt8(0); // room id
@@ -233,7 +263,8 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
                 }
             }, 1);
         });
-        this.hasWarped = 90;
+        
+        this.hasWarped = 75;
     }
 
     getForwardBit(buf: Buffer, start: number = 0): number {
@@ -290,9 +321,9 @@ ${this.ModLoader.emulator.rdramReadBuffer(0x801C86D0, 512).toString('hex')}\n`);
             } this.ModLoader.ImGui.end();
         }
 
-        if(this.hasWarped != 0 && this.core.OOT!.global.scene_framecount < 200)
-        {
-            this.ModLoader.emulator.rdramWriteBuffer(0x801C86D0, Buffer.from(`c3d5a91643cf5c29c4a5befec3d360bd43dab2cfc49594c8bbc78bdf3f7c27f8be30a462c3d360bd43dab2cfc49594c8000000000000000000000000801c84a0801daa30c3d5a91643be0000c4a5befe00008170000041bc0000000000000000000000000000000000000000000000003f8000004180000041c000003d4ccccd3d4ccccd3d4ccccd0000000043035fe80000000000000000420ae14800000000000000000000000000000000427000003f19999943be0000000000003f8000000000000000000000ffffffffffffffff0000000000000000000000000000000000000000f8ee81720000f8ee817200000007000100000032000c000000970000000000000001ffff0032000000000001ffff00000000ffff7fff00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003f80000000000000000000000000000000000000000000000000000000000000801c84a00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004120000041800000412000003d4ccccd3d4ccccd3d4ccccd000000000000000000000000`, "hex"));
+        if (this.hasWarped != 0 && this.core.OOT!.global.scene_framecount  < 200) {
+            this.adjustCamera();
+            
         }
 
 
@@ -402,6 +433,7 @@ ${this.ModLoader.emulator.rdramReadBuffer(0x801C86D0, 512).toString('hex')}\n`);
                     this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_PauseMenu_Select.wav")).play();
                     this.transport(this.warpLocations[this.cursorPos]);
                     this.songPlayed = false;
+                    this.lastWarp = this.warpLocations[this.cursorPos];
                 }
 
                 this.ModLoader.ImGui.popStyleVar();
@@ -420,6 +452,51 @@ ${this.ModLoader.emulator.rdramReadBuffer(0x801C86D0, 512).toString('hex')}\n`);
                 this.onOpen = true;
             }
         }
+    }
+
+    adjustCamera() {
+        //this.ModLoader.emulator.rdramWriteBuffer((0x801C84A0 + 0x1E0 + 0x5C + 4), Buffer.from(this.core.OOT!.link.position.y.toString(16),`hex`));
+        //this.ModLoader.emulator.rdramWrite16((0x801C84A0 + 0x1E0 + 0x142), 33); // Camera Setting to Free
+        //this.ModLoader.emulator.rdramWrite16((0x801C84A0 + 0x1E0 + 0x144), 16); // Camera Mode to Pause
+
+        let rawpos = this.core.OOT?.link.position.getRawPos()
+        let rawrot = this.core.OOT?.link.rotation.getRawRot()
+
+        //@ts-ignore
+        let ry = rawrot?.readInt16BE(2) * s2rad
+        let campos = new Vector3(rawpos?.readFloatBE(0), rawpos?.readFloatBE(4), rawpos?.readFloatBE(8))
+        let fwd = new Vector3(Math.sin(ry), 0, Math.cos(ry))
+        campos = campos.plus(fwd.multiplyN(-150))
+        //this.ModLoader.emulator.rdramWriteBuffer(0x801C86D0, Buffer.from(`c3d5a91643cf5c29c4a5befec3d360bd43dab2cfc49`, "hex"));
+        //@ts-ignore    
+        this.ModLoader.emulator.rdramWriteBuffer(0x801C84A0 + 0x1E0 + 0x50, rawpos)
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0x5C + 0, campos.x)
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0x5C + 4, campos.y)
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0x5C + 8, campos.z)
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xD8, 0)
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xDC, 0)
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xE0, 0)
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xE4 + 0, 0)
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xE4 + 4, 0)
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xE4 + 8, 0)
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xF0 + 0, 0)
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xF0 + 4, 0)
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xF0 + 8, 0)
+
+        /*
+        let loc: OwlData | undefined;
+        for (let i = 0; i < this.locations.length; i++) {
+            if (this.locations[i].scene[this.core.OOT!.save.age] === this.lastWarp.sceneIndex[this.core.OOT!.save.age]) {
+                loc = this.locations[i];
+                break;
+            }
+        }
+        let pos = this.core.OOT!.save.age === 0 ? loc?.adultSpawnPos : loc?.childSpawnPos;
+
+        //@ts-ignore
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0x5C + 4, pos?.readFloatBE(4)+50)
+        */
+
     }
 
     constrainWindow(xi: number, yi: number) {
