@@ -12,16 +12,29 @@ import { vec2, vec3 } from 'modloader64_api/Sylvain/vec';
 import bitwise from 'bitwise';
 import { UInt8 } from 'bitwise/types';
 import { EventHandler, EventsClient } from 'modloader64_api/EventHandler';
-import { IActor, Z64 } from 'Z64Lib/API/imports'
+import { IActor, Z64 } from 'Z64Lib/API/imports';
 import { number_ref } from 'modloader64_api/Sylvain/ImGui';
 import { AgeOrForm, IOvlPayloadResult } from 'Z64Lib/API/Common/Z64API';
 import Vector3 from 'modloader64_api/math/Vector3';
 import { zzstatic2 } from 'Z64Lib/API/Utilities/zzstatic2';
-import { SCENES, Scenes } from './OoTSceneEnum';
+import { SCENES, Scenes, thieves_hideout } from './OoTSceneEnum';
 import { Sound } from 'modloader64_api/Sound/sfml_audio';
 import { SmartBuffer } from 'smart-buffer';
 import { ISongOfSoaringClient } from './SongOfSoaring';
 import { Scene } from 'Z64Lib/API/OoT/OOTAPI';
+import { ProxySide, SidedProxy } from 'modloader64_api/SidedProxy/SidedProxy';
+import MapHelper from './MapHelper';
+
+
+//TO DO LIST!
+// - What happenes when you don't have any owls hit and you play the song?
+// - Index Warp
+// Hidden Owl placement
+// Extra warp locations
+// Implement Map Reading
+// - How the fuck do I read songs? 
+
+
 
 const s2rad = Math.PI / 32768.0;
 const rad2s = 32768.0 / Math.PI;
@@ -51,18 +64,28 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
     core!: IZ64Main;
     Input!: Z64Input;
 
+    @SidedProxy(ProxySide.CLIENT, MapHelper)
+    mapHelper!: MapHelper;
 
     songPlayed: boolean = false;
     owlData: Buffer = Buffer.alloc(2, 0);
     owl!: Texture;
     map!: Texture;
     cursor!: Texture;
-    blip!: Sound;
+    sBlip!: Sound;
+    sMenuOpen!: Sound;
+    sMenuSelect!: Sound;
+    sMenuClose!: Sound;
     boot: boolean = true;
     open: boolean = true;
     onOpen: boolean = true;
     saveLoaded: boolean = false;
     inputstall: boolean = false;
+    hiddenOwl: boolean = false;
+    aStall: number = 0;
+    bStall: number = 0;
+    isText: boolean = false;
+    yesNo: number = 0;
     hasWarped: number = 0;
     selection!: vec2;
     kakPos = { x: 100, y: 100 };
@@ -144,7 +167,10 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
         this.CastleField,       // 7 -
         this.GoronCity          // 8 -
     ];
-    
+
+    warpTextYes: Texture[] = [];
+
+    warpTextNo: Texture[] = [];
 
     @EventHandler(Z64.OotEvents.ON_SAVE_LOADED)
     onSaveLoad() {
@@ -166,6 +192,14 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
 
             }
             this.hasWarped--;
+        }
+
+        if (this.aStall != 0) {
+            this.aStall--;
+        }
+
+        if (this.bStall != 0) {
+            this.bStall--;
         }
     }
 
@@ -263,7 +297,7 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
                 }
             }, 1);
         });
-        
+
         this.hasWarped = 75;
     }
 
@@ -304,10 +338,62 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
             this.cursor = this.ModLoader.Gfx.createTexture();
             this.cursor.loadFromFile(path.resolve(__dirname, "cursor.png"));
 
-            this.blip = this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_PauseMenu_Cursor.wav"));
+            this.sBlip = this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_PauseMenu_Cursor.wav"));
 
-            this.mapSize = { x: this.map.width * 2, y: this.map.height * 2 }
+            this.sMenuOpen = this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_PauseMenu_Open.wav"));
+
+            this.sMenuSelect = this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_PauseMenu_Select.wav"));
+
+            this.sMenuClose = this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_PauseMenu_Close.wav"));
+
+
+
+            this.mapSize = { x: this.map.width * 2, y: this.map.height * 2 };
             this.boot = false;
+
+            const texTemp = (tex: string) => {
+                let temp = this.ModLoader.Gfx.createTexture();
+                temp.loadFromFile(path.resolve(__dirname, tex));
+                return temp;
+            }
+
+            this.warpTextYes.push(texTemp("Text/KakOK.png"));
+
+            this.warpTextYes.push(texTemp("Text/KokiriOK.png"));
+
+            this.warpTextYes.push(texTemp("Text/ZoraOK.png"));
+
+            this.warpTextYes.push(texTemp("Text/DesertOK.png"));
+
+            this.warpTextYes.push(texTemp("Text/GerudoOK.png"));
+
+            this.warpTextYes.push(texTemp("Text/LakeHyliaOK.png"));
+
+            this.warpTextYes.push(texTemp("Text/RanchOK.png"));
+
+            this.warpTextYes.push(texTemp("Text/CastleOK.png"));
+
+            this.warpTextYes.push(texTemp("Text/GoronOK.png"));
+
+
+            this.warpTextNo.push(texTemp("Text/KakNO.png"));
+
+            this.warpTextNo.push(texTemp("Text/KokiriNO.png"));
+
+            this.warpTextNo.push(texTemp("Text/ZoraNO.png"));
+
+            this.warpTextNo.push(texTemp("Text/DesertNO.png"));
+
+            this.warpTextNo.push(texTemp("Text/GerudoNO.png"));
+
+            this.warpTextNo.push(texTemp("Text/LakeHyliaNO.png"));
+
+            this.warpTextNo.push(texTemp("Text/RanchNO.png"));
+
+            this.warpTextNo.push(texTemp("Text/CastleNO.png"));
+
+            this.warpTextNo.push(texTemp("Text/GoronNO.png"));
+
         }
     }
 
@@ -321,12 +407,9 @@ ${this.ModLoader.emulator.rdramReadBuffer(0x801C86D0, 512).toString('hex')}\n`);
             } this.ModLoader.ImGui.end();
         }
 
-        if (this.hasWarped != 0 && this.core.OOT!.global.scene_framecount  < 200) {
-            this.adjustCamera();
-            
+        if (this.hasWarped != 0 && this.core.OOT!.global.scene_framecount < 200) {
+            //this.adjustCamera();
         }
-
-
 
         //@ts-ignore
         this.Input.step(this.core.OOT?.global.framecount); // required for Input
@@ -335,23 +418,10 @@ ${this.ModLoader.emulator.rdramReadBuffer(0x801C86D0, 512).toString('hex')}\n`);
             this.songPlayed = true;
         }
 
-        // Uncomment me if den messed up any of the spawn locations.
-        /* if (this.ModLoader.ImGui.begin("DEBUG2###Maro:DEBUG2")) {
-            if (this.ModLoader.ImGui.smallButton("FUCK")) {
-                let a: any = {
-                    adultSpawnPos: this.core.OOT!.link.position.getRawPos(),
-                    adultSpawnRot: this.core.OOT!.link.rotation.getRawRot(),
-                    childSpawnPos: this.core.OOT!.link.position.getRawPos(),
-                    childSpawnRot: this.core.OOT!.link.rotation.getRawRot()
-                };
-                console.log(JSON.stringify(a));
-            }
-        } */
-
         if (this.songPlayed) {
 
             if (this.onOpen) {
-                this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_PauseMenu_Open.wav")).play();
+                this.sMenuOpen.play();
                 this.cursorPos = 0;
 
                 if (!this.owlData.equals(EMPTY_OWL_DATA)) {
@@ -363,93 +433,139 @@ ${this.ModLoader.emulator.rdramReadBuffer(0x801C86D0, 512).toString('hex')}\n`);
                         }
                     }
                 }
-
+                else {
+                    this.cursorPos = this.mapHelper.cursorPos;
+                }
                 this.onOpen = false;
             }
 
             this.core.OOT!.link.redeadFreeze = 4;
             this.open = true;
-            this.mapPos = { x: this.ModLoader.ImGui.getWindowPos().x + ((this.ModLoader.ImGui.getWindowContentRegionMax().x / 2) - this.mapSize.x / 2), y: this.ModLoader.ImGui.getWindowPos().y + ((this.ModLoader.ImGui.getWindowContentRegionMax().y / 2) - this.mapSize.y / 2) };
+            this.mapPos = { x: this.ModLoader.ImGui.getWindowPos().x + ((this.ModLoader.ImGui.getMainViewport().size.x / 2) - this.mapSize.x / 2), y: this.ModLoader.ImGui.getWindowPos().y + ((this.ModLoader.ImGui.getMainViewport().size.y / 2) - this.mapSize.y / 2) - 12 };
             this.constrainWindow(this.ModLoader.ImGui.getWindowWidth(), this.ModLoader.ImGui.getWindowHeight());
-
             this.ModLoader.ImGui.setNextWindowPos(this.mapPos);
             this.ModLoader.ImGui.setNextWindowSize(this.mapSize);
-            this.ModLoader.ImGui.pushStyleVar(StyleVar.Alpha, 0.000001);
-            if (this.ModLoader.ImGui.begin("Song of Soaring###Maro:SoSWindow", [this.songPlayed], WindowFlags.NoResize | WindowFlags.NoTitleBar)) {
-                this.ModLoader.ImGui.popStyleVar();
-                this.ModLoader.ImGui.pushStyleVar(StyleVar.Alpha, 1);
-                this.ModLoader.ImGui.getWindowDrawList().addRect({ x: 0, y: 0 }, { x: this.ModLoader.ImGui.getWindowWidth(), y: this.ModLoader.ImGui.getWindowHeight() }, { x: 1, y: 1, z: 1, w: 1 });
 
-                this.ModLoader.ImGui.getWindowDrawList().addImage(this.map.id, { x: 0, y: 0 }, { x: this.ModLoader.ImGui.getWindowWidth(), y: this.ModLoader.ImGui.getWindowHeight() });
+            if (!this.owlData.equals(EMPTY_OWL_DATA) || this.hiddenOwl) {
+                this.ModLoader.ImGui.pushStyleVar(StyleVar.Alpha, 0.000001);
+                if (this.ModLoader.ImGui.begin("Song of Soaring###Maro:SoSWindow", [this.songPlayed], WindowFlags.NoResize | WindowFlags.NoTitleBar)) {
+                    this.ModLoader.ImGui.popStyleVar();
+                    this.ModLoader.ImGui.pushStyleVar(StyleVar.Alpha, 1);
+                    this.ModLoader.ImGui.getWindowDrawList().addRect({ x: 0, y: 0 }, { x: this.ModLoader.ImGui.getWindowWidth(), y: this.ModLoader.ImGui.getWindowHeight() }, { x: 1, y: 1, z: 1, w: 1 });
+
+                    this.ModLoader.ImGui.getWindowDrawList().addImage(this.map.id, { x: 0, y: 0 }, { x: this.ModLoader.ImGui.getWindowWidth(), y: this.ModLoader.ImGui.getWindowHeight() });
 
 
-                for (let i = 0; i < this.warpLocations.length; i++) {
-                    if (i < bitwise.byte.read(this.owlData[0] as UInt8).length) {
-                        if (Boolean(bitwise.byte.read(this.owlData[0] as UInt8)[i])) {
-                            this.placeOnMap(this.owl, this.warpLocations[i].mapLoc);
+                    for (let i = 0; i < this.warpLocations.length; i++) {
+                        if (i < bitwise.byte.read(this.owlData[0] as UInt8).length) {
+                            if (Boolean(bitwise.byte.read(this.owlData[0] as UInt8)[i])) {
+                                this.placeOnMap(this.owl, this.warpLocations[i].mapLoc);
+                            }
+                        }
+                        if (Boolean(bitwise.byte.read(this.owlData[1] as UInt8)[0])) {
+                            this.placeOnMap(this.owl, this.warpLocations[8].mapLoc);
                         }
                     }
-                    if (Boolean(bitwise.byte.read(this.owlData[1] as UInt8)[0])) {
-                        this.placeOnMap(this.owl, this.warpLocations[8].mapLoc);
-                    }
-                }
 
-                if (this.Input.joystickX > 50 && !this.inputstall) { // MENU INPUTS
-                    if (this.owlData.equals(EMPTY_OWL_DATA)) {
-                        this.blip.play();
-                        this.indexWarpCrash();
+                    if (this.Input.joystickX > 50 && !this.isText && !this.inputstall) { // MENU INPUTS
+                        if (this.owlData.equals(EMPTY_OWL_DATA)) {
+                            this.sBlip.play();
+                            this.indexWarpCrash();
+                            this.songPlayed = false;
+                            return;
+                        }
+                        else {
+                            this.sBlip.play();
+                            this.cursorPos = this.getForwardBit(this.owlData, this.cursorPos + 1);
+                        }
+                        this.inputstall = true;
+                    }
+
+                    if (this.Input.joystickX < -50 && !this.isText && !this.inputstall) {
+
+                        if (this.owlData.equals(EMPTY_OWL_DATA)) {
+                            this.sBlip.play();
+                            this.indexWarpCrash();
+                            this.songPlayed = false;
+                            return;
+                        }
+                        else {
+                            this.sBlip.play();
+                            this.cursorPos = this.getBackwardBit(this.owlData, this.cursorPos - 1);
+                        }
+                        this.inputstall = true;
+                    }
+
+                    if (this.Input.joystickX < 50 && !this.isText && this.Input.joystickX > -50) {
+                        this.inputstall = false;
+                    }
+
+                    this.placeOnMap(this.cursor, this.warpLocations[this.cursorPos].mapLoc)
+
+                    if (this.Input.A.state >= ButtonState.Pressed && !this.isText && this.aStall == 0) {
+
+                        this.sMenuSelect.play();
+                        this.yesNo = 0;
+                        this.isText = true;
+                        this.aStall = 5;
+                    }
+
+                    if (this.Input.B.state === ButtonState.Pressed && !this.isText && this.bStall == 0) {
+                        this.sMenuClose.play();
                         this.songPlayed = false;
-                        return;
+                        this.open = false;
+                        this.onOpen = true;
                     }
-                    else {
-                        this.blip.play();
-                        this.cursorPos = this.getForwardBit(this.owlData, this.cursorPos + 1);
+
+
+                    if (this.isText) // WHEN THE TEXT BOX IS OPEN
+                    {
+                        if (this.yesNo == 0) {
+                            this.placeOnMap(this.warpTextYes[this.cursorPos], { x: 500, y: 600 }, this.warpTextNo[this.cursorPos].height * 3, this.warpTextNo[this.cursorPos].width * 3)
+                        }
+                        else {
+                            this.placeOnMap(this.warpTextNo[this.cursorPos], { x: 500, y: 600 }, this.warpTextNo[this.cursorPos].height * 3, this.warpTextNo[this.cursorPos].width * 3);
+                        }
+
+                        if (this.Input.joystickY > 50 && !this.inputstall && this.yesNo != 0) {
+                            this.yesNo = 0;
+                            this.sBlip.play();
+                        }
+
+                        if (this.Input.joystickY < -50 && !this.inputstall && this.yesNo != 1) {
+                            this.yesNo = 1;
+                            this.sBlip.play();
+                        }
+
+                        if (this.Input.A.state >= ButtonState.Pressed && this.yesNo == 0 && this.aStall == 0) {
+                            this.sMenuSelect.play();
+                            this.transport(this.warpLocations[this.cursorPos]);
+                            this.songPlayed = false;
+                            this.lastWarp = this.warpLocations[this.cursorPos];
+                            this.isText = false;
+                            this.aStall = 5;
+                        }
+
+                        if ((this.Input.A.state >= ButtonState.Pressed && this.yesNo == 1 && this.aStall == 0) || (this.Input.B.state >= ButtonState.Pressed && this.bStall == 0)) {
+                            this.sMenuClose.play();
+                            this.isText = false;
+                            this.aStall = 5;
+                            this.bStall = 5;
+                        }
+
                     }
-                    this.inputstall = true;
-                }
 
-                if (this.Input.joystickX < -50 && !this.inputstall) {
-
-                    if (this.owlData.equals(EMPTY_OWL_DATA)) {
-                        this.blip.play();
-                        this.indexWarpCrash();
-                        this.songPlayed = false;
-                        return;
+                    if (this.Input.A.state == ButtonState.Up) {
+                        this.aStall = 0;
                     }
-                    else {
-                        this.blip.play();
-                        this.cursorPos = this.getBackwardBit(this.owlData, this.cursorPos - 1);
+
+                    if (this.Input.B.state == ButtonState.Up) {
+                        this.bStall = 0;
                     }
-                    this.inputstall = true;
+
+                    this.ModLoader.ImGui.popStyleVar();
                 }
-
-                if (this.Input.joystickX < 50 && this.Input.joystickX > -50) {
-                    this.inputstall = false;
-                }
-
-                this.placeOnMap(this.cursor, this.warpLocations[this.cursorPos].mapLoc)
-
-                if (this.Input.A.state >= ButtonState.Pressed) {
-                    this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_PauseMenu_Select.wav")).play();
-                    this.transport(this.warpLocations[this.cursorPos]);
-                    this.songPlayed = false;
-                    this.lastWarp = this.warpLocations[this.cursorPos];
-                }
-
-                this.ModLoader.ImGui.popStyleVar();
-            }
-            this.ModLoader.ImGui.end();
-            if (this.ModLoader.ImGui.begin("DEBUG###Maro:DEBUG")) {
-                this.ModLoader.ImGui.text(`What the fuck is going on with the byte array?\n ${this.owlData[0]}\n${this.owlData[1]}`);
-            }
-
-            this.ModLoader.ImGui.end();
-
-            if (this.Input.B.state === ButtonState.Pressed) {
-                this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_PauseMenu_Close.wav")).play();
-                this.songPlayed = false;
-                this.open = false;
-                this.onOpen = true;
+                this.ModLoader.ImGui.end();
             }
         }
     }
@@ -459,29 +575,29 @@ ${this.ModLoader.emulator.rdramReadBuffer(0x801C86D0, 512).toString('hex')}\n`);
         //this.ModLoader.emulator.rdramWrite16((0x801C84A0 + 0x1E0 + 0x142), 33); // Camera Setting to Free
         //this.ModLoader.emulator.rdramWrite16((0x801C84A0 + 0x1E0 + 0x144), 16); // Camera Mode to Pause
 
-        let rawpos = this.core.OOT?.link.position.getRawPos()
-        let rawrot = this.core.OOT?.link.rotation.getRawRot()
+        let rawpos = this.core.OOT?.link.position.getRawPos();
+        let rawrot = this.core.OOT?.link.rotation.getRawRot();
 
         //@ts-ignore
-        let ry = rawrot?.readInt16BE(2) * s2rad
-        let campos = new Vector3(rawpos?.readFloatBE(0), rawpos?.readFloatBE(4), rawpos?.readFloatBE(8))
-        let fwd = new Vector3(Math.sin(ry), 0, Math.cos(ry))
-        campos = campos.plus(fwd.multiplyN(-150))
+        let ry = rawrot?.readInt16BE(2) * s2rad;
+        let campos = new Vector3(rawpos?.readFloatBE(0), rawpos?.readFloatBE(4), rawpos?.readFloatBE(8));
+        let fwd = new Vector3(Math.sin(ry), 0, Math.cos(ry));
+        campos = campos.plus(fwd.multiplyN(-150));
         //this.ModLoader.emulator.rdramWriteBuffer(0x801C86D0, Buffer.from(`c3d5a91643cf5c29c4a5befec3d360bd43dab2cfc49`, "hex"));
         //@ts-ignore    
-        this.ModLoader.emulator.rdramWriteBuffer(0x801C84A0 + 0x1E0 + 0x50, rawpos)
-        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0x5C + 0, campos.x)
-        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0x5C + 4, campos.y)
-        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0x5C + 8, campos.z)
-        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xD8, 0)
-        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xDC, 0)
-        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xE0, 0)
-        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xE4 + 0, 0)
-        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xE4 + 4, 0)
-        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xE4 + 8, 0)
-        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xF0 + 0, 0)
-        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xF0 + 4, 0)
-        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xF0 + 8, 0)
+        this.ModLoader.emulator.rdramWriteBuffer(0x801C84A0 + 0x1E0 + 0x50, rawpos);
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0x5C + 0, campos.x);
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0x5C + 4, campos.y);
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0x5C + 8, campos.z);
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xD8, 0);
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xDC, 0);
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xE0, 0);
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xE4 + 0, 0);
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xE4 + 4, 0);
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xE4 + 8, 0);
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xF0 + 0, 0);
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xF0 + 4, 0);
+        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xF0 + 8, 0);
 
         /*
         let loc: OwlData | undefined;
@@ -520,14 +636,26 @@ ${this.ModLoader.emulator.rdramReadBuffer(0x801C86D0, 512).toString('hex')}\n`);
         this.mapSize = { x: xi, y: yi };
     }
 
-    placeOnMap(image: Texture, pos: vec2) {
+    placeOnMap(image: Texture, pos: vec2, height?: number, width?: number) {
         let xval = (this.mapSize.x * pos.x) / 1000;
         let yval = (this.mapSize.y * pos.y) / 1000;
-        this.ModLoader.ImGui.getWindowDrawList().addImage(image.id, { x: xval - ((image.width / 2) / this.mapScale), y: yval - ((image.height / 2) / this.mapScale) }, { x: xval + ((image.width / 2) / this.mapScale), y: yval + ((image.height / 2) / this.mapScale) });
+        if (height === undefined || width === undefined) {
+            this.ModLoader.ImGui.getWindowDrawList().addImage(image.id, { x: xval - ((image.width / 2) / this.mapScale), y: yval - ((image.height / 2) / this.mapScale) }, { x: xval + ((image.width / 2) / this.mapScale), y: yval + ((image.height / 2) / this.mapScale) });
+        }
+        else {
+            this.ModLoader.ImGui.getWindowDrawList().addImage(image.id, { x: xval - ((width / 2) / this.mapScale), y: yval - ((height / 2) / this.mapScale) }, { x: xval + ((width / 2) / this.mapScale), y: yval + ((height / 2) / this.mapScale) });
+        }
+
+
     }
 
     indexToOffset(i: number): number {
         return 7 - i;
+    }
+
+    hasSongPlayed() {
+
+
     }
 
     spawnOwl(i: number) {
