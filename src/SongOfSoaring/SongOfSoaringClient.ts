@@ -27,12 +27,11 @@ import MapHelper from './MapHelper';
 
 
 //TO DO LIST!
-// - What happenes when you don't have any owls hit and you play the song?
+// - How the fuck do I read songs?
 // - Index Warp
 // Hidden Owl placement
 // Extra warp locations
 // Implement Map Reading
-// - How the fuck do I read songs? 
 
 
 
@@ -66,16 +65,18 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
 
     @SidedProxy(ProxySide.CLIENT, MapHelper)
     mapHelper!: MapHelper;
-
+v
     songPlayed: boolean = false;
     owlData: Buffer = Buffer.alloc(2, 0);
     owl!: Texture;
     map!: Texture;
     cursor!: Texture;
+    none!: Texture;
     sBlip!: Sound;
     sMenuOpen!: Sound;
     sMenuSelect!: Sound;
     sMenuClose!: Sound;
+    sTextClose!: Sound;
     boot: boolean = true;
     open: boolean = true;
     onOpen: boolean = true;
@@ -152,7 +153,7 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
 
     CastleField: IWarpLocation = {
         mapLoc: { x: 515, y: 130 },
-        entranceIndex: [0x013A, 0x0138],
+        entranceIndex: [0x023D, 0x0138], //23D
         sceneIndex: [Scenes.get(SCENES.ganon_castle_exterior)!.id, Scenes.get(SCENES.hyrule_castle)!.id]
     };
 
@@ -183,11 +184,11 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
         this.owlData.writeUInt16BE(this.ModLoader.emulator.rdramRead16(SAVE_DATA_POINTER), 0);
         if (!(this.hasWarped <= 0)) {
             if (this.hasWarped == 1) {
-                let fuck = Buffer.alloc(0xC, 0)
+                let iTemp = Buffer.alloc(0xC, 0)
                 this.ModLoader.emulator.rdramWrite16((0x801C84A0 + 0x1E0 + 0x142), 1); // Camera Setting to Free
                 this.ModLoader.emulator.rdramWrite16((0x801C84A0 + 0x1E0 + 0x144), 0);
-                this.ModLoader.emulator.rdramWriteBuffer((0x801C84A0 + 0x1E0 + 0xF0), fuck);
-                this.ModLoader.emulator.rdramWriteBuffer((0x801C84A0 + 0x1E0 + 0x80), fuck);
+                this.ModLoader.emulator.rdramWriteBuffer((0x801C84A0 + 0x1E0 + 0xF0), iTemp);
+                this.ModLoader.emulator.rdramWriteBuffer((0x801C84A0 + 0x1E0 + 0x80), iTemp);
                 this.ModLoader.logger.error(`ENDING HASWARPED`);
 
             }
@@ -281,12 +282,13 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
         sb.writeUInt16BE(0x02FF); // player variable
         sb.writeUInt16BE(warp.entranceIndex[this.core.OOT!.save.age]); // entrance index
         sb.writeUInt8(0); // room id
-        sb.writeUInt8(0x28); // data?
+        sb.writeUInt8(0xFF); // data?
         sb.writeUInt32BE(0); // flag shit 1
         sb.writeUInt32BE(0); // flag shit 2
-        for (let i = 0; i < 3; i++) {
-            this.ModLoader.emulator.rdramWriteBuffer(0x8011B938 + (i * 0x1C), sb.toBuffer());
-        }
+
+        this.ModLoader.emulator.rdramWriteBuffer(0x8011B938 + (0 * 0x1C), sb.toBuffer());
+        this.ModLoader.emulator.rdramWriteBuffer(0x8011B938 + (1 * 0x1C), sb.toBuffer());
+        this.ModLoader.emulator.rdramWriteBuffer(0x8011B938 + (2 * 0x1C), sb.toBuffer());
 
         this.core.OOT!.commandBuffer.runWarp(warp.entranceIndex[this.core.OOT!.save.age], 0, undefined, 0x08).then(() => {
             this.warpingHandler = this.ModLoader.utils.setIntervalFrames(() => {
@@ -314,7 +316,7 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
 
     getBackwardBit(buf: Buffer, start: number = 0) {
         let bits = this.ModLoader.emulator.rdramReadBitsBuffer(SAVE_DATA_POINTER, 2);
-        if (start === 0) start = bits.byteLength - 1;
+        if (start === -1) start = bits.byteLength - 1;
         for (let i = start; i > 0; i--) {
             if (bits[i] === 1) {
                 return i;
@@ -346,9 +348,11 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
 
             this.sMenuClose = this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_PauseMenu_Close.wav"));
 
+            this.sMenuOpen = this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_Dialogue_Done.wav"));
 
 
             this.mapSize = { x: this.map.width * 2, y: this.map.height * 2 };
+
             this.boot = false;
 
             const texTemp = (tex: string) => {
@@ -356,6 +360,7 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
                 temp.loadFromFile(path.resolve(__dirname, tex));
                 return temp;
             }
+
 
             this.warpTextYes.push(texTemp("Text/KakOK.png"));
 
@@ -394,19 +399,12 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
 
             this.warpTextNo.push(texTemp("Text/GoronNO.png"));
 
+            this.none = texTemp("Text/None.png")
         }
     }
 
     @onViUpdate() // Once per vertical interrupt (refresh, buffer swap)
     onViUpdate() {
-        if (this.ModLoader.ImGui.begin(`CAPTURE window`)) {
-            if (this.ModLoader.ImGui.button(`CAPTURE`)) {
-                this.ModLoader.logger.info(`For SCENE: ${this.core.OOT?.global.scene}\n
-${this.ModLoader.emulator.rdramReadBuffer(0x801C86D0, 512).toString('hex')}\n`);
-
-            } this.ModLoader.ImGui.end();
-        }
-
         if (this.hasWarped != 0 && this.core.OOT!.global.scene_framecount < 200) {
             //this.adjustCamera();
         }
@@ -451,8 +449,6 @@ ${this.ModLoader.emulator.rdramReadBuffer(0x801C86D0, 512).toString('hex')}\n`);
                 if (this.ModLoader.ImGui.begin("Song of Soaring###Maro:SoSWindow", [this.songPlayed], WindowFlags.NoResize | WindowFlags.NoTitleBar)) {
                     this.ModLoader.ImGui.popStyleVar();
                     this.ModLoader.ImGui.pushStyleVar(StyleVar.Alpha, 1);
-                    this.ModLoader.ImGui.getWindowDrawList().addRect({ x: 0, y: 0 }, { x: this.ModLoader.ImGui.getWindowWidth(), y: this.ModLoader.ImGui.getWindowHeight() }, { x: 1, y: 1, z: 1, w: 1 });
-
                     this.ModLoader.ImGui.getWindowDrawList().addImage(this.map.id, { x: 0, y: 0 }, { x: this.ModLoader.ImGui.getWindowWidth(), y: this.ModLoader.ImGui.getWindowHeight() });
 
 
@@ -494,10 +490,6 @@ ${this.ModLoader.emulator.rdramReadBuffer(0x801C86D0, 512).toString('hex')}\n`);
                             this.cursorPos = this.getBackwardBit(this.owlData, this.cursorPos - 1);
                         }
                         this.inputstall = true;
-                    }
-
-                    if (this.Input.joystickX < 50 && !this.isText && this.Input.joystickX > -50) {
-                        this.inputstall = false;
                     }
 
                     this.placeOnMap(this.cursor, this.warpLocations[this.cursorPos].mapLoc)
@@ -555,18 +547,44 @@ ${this.ModLoader.emulator.rdramReadBuffer(0x801C86D0, 512).toString('hex')}\n`);
 
                     }
 
-                    if (this.Input.A.state == ButtonState.Up) {
-                        this.aStall = 0;
-                    }
-
-                    if (this.Input.B.state == ButtonState.Up) {
-                        this.bStall = 0;
-                    }
-
                     this.ModLoader.ImGui.popStyleVar();
                 }
                 this.ModLoader.ImGui.end();
             }
+            else if (this.owlData.equals(EMPTY_OWL_DATA))
+            {
+                this.ModLoader.ImGui.pushStyleVar(StyleVar.Alpha, 0.000001);
+                if (this.ModLoader.ImGui.begin("Song of Soaring###Maro:SoSWindow", [this.songPlayed], WindowFlags.NoResize | WindowFlags.NoTitleBar)) {
+                    this.ModLoader.ImGui.popStyleVar();
+                    this.ModLoader.ImGui.pushStyleVar(StyleVar.Alpha, 1);
+
+
+                    this.ModLoader.ImGui.getWindowDrawList().addImage(this.none.id, { x: 0, y: 0 }, { x: this.ModLoader.ImGui.getWindowWidth(), y: this.ModLoader.ImGui.getWindowHeight()});
+
+
+                    this.ModLoader.ImGui.popStyleVar();
+                }
+                this.ModLoader.ImGui.end();
+
+                if ((this.Input.B.state === ButtonState.Pressed && !this.isText && this.bStall == 0) || (this.Input.A.state >= ButtonState.Pressed && this.yesNo == 0 && this.aStall == 0)) {
+                    this.sTextClose.play();
+                    this.songPlayed = false;
+                }
+
+
+            }
+        }
+
+        if (this.Input.A.state == ButtonState.Up) {
+            this.aStall = 0;
+        }
+
+        if (this.Input.B.state == ButtonState.Up) {
+            this.bStall = 0;
+        }
+
+        if (this.Input.joystickX < 50 && !this.isText && this.Input.joystickX > -50) {
+            this.inputstall = false;
         }
     }
 
