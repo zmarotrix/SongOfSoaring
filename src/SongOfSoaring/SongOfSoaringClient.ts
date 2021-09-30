@@ -65,7 +65,7 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
 
     @SidedProxy(ProxySide.CLIENT, MapHelper)
     mapHelper!: MapHelper;
-v
+
     songPlayed: boolean = false;
     owlData: Buffer = Buffer.alloc(2, 0);
     owl!: Texture;
@@ -77,6 +77,7 @@ v
     sMenuSelect!: Sound;
     sMenuClose!: Sound;
     sTextClose!: Sound;
+    ඞ: boolean = false;  //🥺👉👈
     boot: boolean = true;
     open: boolean = true;
     onOpen: boolean = true;
@@ -156,7 +157,7 @@ v
         entranceIndex: [0x023D, 0x0138], //23D
         sceneIndex: [Scenes.get(SCENES.ganon_castle_exterior)!.id, Scenes.get(SCENES.hyrule_castle)!.id]
     };
-
+    
     warpLocations: IWarpLocation[] = [
         this.Kakariko,          // 0 -
         this.KokiriForest,      // 1 -
@@ -305,7 +306,7 @@ v
 
     getForwardBit(buf: Buffer, start: number = 0): number {
         let bits = this.ModLoader.emulator.rdramReadBitsBuffer(SAVE_DATA_POINTER, 2);
-        if (start > bits.byteLength) start = 0;
+        if (start > 9) start = 0;
         for (let i = start; i < bits.byteLength; i++) {
             if (bits[i] === 1) {
                 return i;
@@ -316,8 +317,8 @@ v
 
     getBackwardBit(buf: Buffer, start: number = 0) {
         let bits = this.ModLoader.emulator.rdramReadBitsBuffer(SAVE_DATA_POINTER, 2);
-        if (start === -1) start = bits.byteLength - 1;
-        for (let i = start; i > 0; i--) {
+        if (start === -1) start = 9;
+        for (let i = start; i >= 0; i--) {
             if (bits[i] === 1) {
                 return i;
             }
@@ -350,7 +351,7 @@ v
 
             this.sMenuOpen = this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_Dialogue_Done.wav"));
 
-
+            
             this.mapSize = { x: this.map.width * 2, y: this.map.height * 2 };
 
             this.boot = false;
@@ -601,7 +602,6 @@ v
         let campos = new Vector3(rawpos?.readFloatBE(0), rawpos?.readFloatBE(4), rawpos?.readFloatBE(8));
         let fwd = new Vector3(Math.sin(ry), 0, Math.cos(ry));
         campos = campos.plus(fwd.multiplyN(-150));
-        //this.ModLoader.emulator.rdramWriteBuffer(0x801C86D0, Buffer.from(`c3d5a91643cf5c29c4a5befec3d360bd43dab2cfc49`, "hex"));
         //@ts-ignore    
         this.ModLoader.emulator.rdramWriteBuffer(0x801C84A0 + 0x1E0 + 0x50, rawpos);
         this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0x5C + 0, campos.x);
@@ -616,21 +616,6 @@ v
         this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xF0 + 0, 0);
         this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xF0 + 4, 0);
         this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0xF0 + 8, 0);
-
-        /*
-        let loc: OwlData | undefined;
-        for (let i = 0; i < this.locations.length; i++) {
-            if (this.locations[i].scene[this.core.OOT!.save.age] === this.lastWarp.sceneIndex[this.core.OOT!.save.age]) {
-                loc = this.locations[i];
-                break;
-            }
-        }
-        let pos = this.core.OOT!.save.age === 0 ? loc?.adultSpawnPos : loc?.childSpawnPos;
-
-        //@ts-ignore
-        this.ModLoader.emulator.rdramWriteF32(0x801C84A0 + 0x1E0 + 0x5C + 4, pos?.readFloatBE(4)+50)
-        */
-
     }
 
     constrainWindow(xi: number, yi: number) {
