@@ -349,7 +349,7 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
 
             this.sMenuClose = this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_PauseMenu_Close.wav"));
 
-            this.sMenuOpen = this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_Dialogue_Done.wav"));
+            this.sTextClose = this.ModLoader.sound.loadSound(path.resolve(__dirname, "OOT_Dialogue_Done.wav"));
 
             
             this.mapSize = { x: this.map.width * 2, y: this.map.height * 2 };
@@ -411,116 +411,105 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
         }
 
         //@ts-ignore
-        this.Input.step(this.core.OOT?.global.framecount); // required for Input
+        this.Input.step(this.core.OOT?.global.framecount);                  // required for Input
 
-        if (this.Input.DUp.state === ButtonState.Down && this.Input.Z.state === ButtonState.Down) {
+        if (this.Input.DUp.state === ButtonState.Down && this.Input.Z.state === ButtonState.Down) { // Detect when song is played.
             this.songPlayed = true;
         }
 
-        if (this.songPlayed) {
+        if (this.songPlayed) {                                              // Song is played.
 
-            if (this.onOpen) {
-                this.sMenuOpen.play();
-                this.cursorPos = 0;
-
-                if (!this.owlData.equals(EMPTY_OWL_DATA)) {
-                    let bits = this.ModLoader.emulator.rdramReadBitsBuffer(SAVE_DATA_POINTER, 2);
-                    for (let i = 0; i < this.warpLocations.length; i++) {
-                        if (bits[i] === 1) {
-                            this.cursorPos = i;
-                            break;
-                        }
-                    }
+            if (this.onOpen) {                                              // Check to see if this is the first loop after being played.
+                this.sMenuOpen.play();                                      // Play open menu sound
+                if (!this.owlData.equals(EMPTY_OWL_DATA)) {                 // Ensure the owl array is not empty.
+                    this.cursorPos = this.getForwardBit(this.owlData, 0);   // set cursor position the next avaliable owl location.
                 }
-                else {
-                    this.cursorPos = this.mapHelper.cursorPos;
+                else {                                                      // Otherwise
+                    this.cursorPos = this.mapHelper.cursorPos;              // Set cursor position to the Map Index.
                 }
-                this.onOpen = false;
+                this.onOpen = false;                                        // This is not longer the firsty run. 
             }
 
-            this.core.OOT!.link.redeadFreeze = 4;
-            this.open = true;
-            this.mapPos = { x: this.ModLoader.ImGui.getWindowPos().x + ((this.ModLoader.ImGui.getMainViewport().size.x / 2) - this.mapSize.x / 2), y: this.ModLoader.ImGui.getWindowPos().y + ((this.ModLoader.ImGui.getMainViewport().size.y / 2) - this.mapSize.y / 2) - 12 };
-            this.constrainWindow(this.ModLoader.ImGui.getWindowWidth(), this.ModLoader.ImGui.getWindowHeight());
-            this.ModLoader.ImGui.setNextWindowPos(this.mapPos);
-            this.ModLoader.ImGui.setNextWindowSize(this.mapSize);
+            this.core.OOT!.link.redeadFreeze = 4;                           // Stall Links motion. 
+            this.open = true;                                               // Set the window as open.
+            this.mapPos = { x: this.ModLoader.ImGui.getWindowPos().x + ((this.ModLoader.ImGui.getMainViewport().size.x / 2) - this.mapSize.x / 2), y: this.ModLoader.ImGui.getWindowPos().y + ((this.ModLoader.ImGui.getMainViewport().size.y / 2) - this.mapSize.y / 2) - 12 }; // Calculates maps potision.
+            this.constrainWindow(this.ModLoader.ImGui.getWindowWidth(), this.ModLoader.ImGui.getWindowHeight()); // Calculates the windows height and width based on modloaders size.
+            this.ModLoader.ImGui.setNextWindowPos(this.mapPos);             //sets the windows position to the calculated position above. 
+            this.ModLoader.ImGui.setNextWindowSize(this.mapSize);           // Sets the maps size to the values calculated above.
 
-            if (!this.owlData.equals(EMPTY_OWL_DATA) || this.hiddenOwl) {
-                this.ModLoader.ImGui.pushStyleVar(StyleVar.Alpha, 0.000001);
-                if (this.ModLoader.ImGui.begin("Song of Soaring###Maro:SoSWindow", [this.songPlayed], WindowFlags.NoResize | WindowFlags.NoTitleBar)) {
-                    this.ModLoader.ImGui.popStyleVar();
-                    this.ModLoader.ImGui.pushStyleVar(StyleVar.Alpha, 1);
-                    this.ModLoader.ImGui.getWindowDrawList().addImage(this.map.id, { x: 0, y: 0 }, { x: this.ModLoader.ImGui.getWindowWidth(), y: this.ModLoader.ImGui.getWindowHeight() });
+            if (!this.owlData.equals(EMPTY_OWL_DATA) || this.hiddenOwl) {   //Has an owl been hit? Hidden or otherwise.
+                this.ModLoader.ImGui.pushStyleVar(StyleVar.Alpha, 0.000001);// Makes the IMGui window the map is on invisible.
+                if (this.ModLoader.ImGui.begin("Song of Soaring###Maro:SoSWindow", [this.songPlayed], WindowFlags.NoResize | WindowFlags.NoTitleBar)) { // Starts the SoS Window.
+                    this.ModLoader.ImGui.popStyleVar();                     // Clears the invisible Style Var
+                    this.ModLoader.ImGui.pushStyleVar(StyleVar.Alpha, 1);   // Sets the contents of the window to visible.
+                    this.ModLoader.ImGui.getWindowDrawList().addImage(this.map.id, { x: 0, y: 0 }, { x: this.ModLoader.ImGui.getWindowWidth(), y: this.ModLoader.ImGui.getWindowHeight() }); // Draws map to window.
 
 
-                    for (let i = 0; i < this.warpLocations.length; i++) {
-                        if (i < bitwise.byte.read(this.owlData[0] as UInt8).length) {
-                            if (Boolean(bitwise.byte.read(this.owlData[0] as UInt8)[i])) {
-                                this.placeOnMap(this.owl, this.warpLocations[i].mapLoc);
+                    for (let i = 0; i < this.warpLocations.length; i++) {                       // For every owl location
+                        if (i < bitwise.byte.read(this.owlData[0] as UInt8).length) {           // If you are in the first byte.
+                            if (Boolean(bitwise.byte.read(this.owlData[0] as UInt8)[i])) {      // For every bit in the first byte.
+                                this.placeOnMap(this.owl, this.warpLocations[i].mapLoc);        // Draw it on the map if its activated.
                             }
                         }
-                        if (Boolean(bitwise.byte.read(this.owlData[1] as UInt8)[0])) {
-                            this.placeOnMap(this.owl, this.warpLocations[8].mapLoc);
+                        if (Boolean(bitwise.byte.read(this.owlData[1] as UInt8)[0])) {          // If you are in the second byte
+                            this.placeOnMap(this.owl, this.warpLocations[8].mapLoc);            // Place this owl if activated. 
                         }
                     }
 
-                    if (this.Input.joystickX > 50 && !this.isText && !this.inputstall) { // MENU INPUTS
-                        if (this.owlData.equals(EMPTY_OWL_DATA)) {
-                            this.sBlip.play();
-                            this.indexWarpCrash();
-                            this.songPlayed = false;
-                            return;
+                    if (this.Input.joystickX > 50 && !this.isText && !this.inputstall) {            // MENU INPUTS
+                        if (this.owlData.equals(EMPTY_OWL_DATA)) {                                  // If no owls have been hit
+                            this.sBlip.play();                                                      // play sound effect   
+                            this.indexWarpCrash();                                                  // Crash the game lmao
+                            this.closeWindow();                                                     // Close the window for the crash.
+                            return;                                                                 // Stop VI Update loop.
                         }
-                        else {
-                            this.sBlip.play();
-                            this.cursorPos = this.getForwardBit(this.owlData, this.cursorPos + 1);
+                        else {                                                                      // Otherwise
+                            this.sBlip.play();                                                      // Play sound effect
+                            this.cursorPos = this.getForwardBit(this.owlData, this.cursorPos + 1);  // Get the next activated owl and change the cursor pos.
                         }
-                        this.inputstall = true;
+                        this.inputstall = true;                                                     // Don't take further lef/right input until stick neutral  
                     }
 
-                    if (this.Input.joystickX < -50 && !this.isText && !this.inputstall) {
+                    if (this.Input.joystickX < -50 && !this.isText && !this.inputstall) {           // If joystick left
 
-                        if (this.owlData.equals(EMPTY_OWL_DATA)) {
-                            this.sBlip.play();
-                            this.indexWarpCrash();
-                            this.songPlayed = false;
-                            return;
+                        if (this.owlData.equals(EMPTY_OWL_DATA)) {                                  // If no owls have been hit
+                            this.sBlip.play();                                                      // play sound effect 
+                            this.indexWarpCrash();                                                  // Crash the game lmao
+                            this.closeWindow();                                                     // Close the SoS UI.
+                            return;                                                                 // Stop VI Update loop.
                         }
-                        else {
-                            this.sBlip.play();
-                            this.cursorPos = this.getBackwardBit(this.owlData, this.cursorPos - 1);
+                        else {                                                                      // Otherwise
+                            this.sBlip.play();                                                      // Play sound effect
+                            this.cursorPos = this.getBackwardBit(this.owlData, this.cursorPos - 1); // Get the next activated owl and change the cursor pos.
                         }
-                        this.inputstall = true;
+                        this.inputstall = true;                                                     // Don't take further lef/right input until stick neutral  
                     }
 
-                    this.placeOnMap(this.cursor, this.warpLocations[this.cursorPos].mapLoc)
+                    this.placeOnMap(this.cursor, this.warpLocations[this.cursorPos].mapLoc);        // Draw cursor on map.
 
-                    if (this.Input.A.state >= ButtonState.Pressed && !this.isText && this.aStall == 0) {
-
-                        this.sMenuSelect.play();
-                        this.yesNo = 0;
-                        this.isText = true;
-                        this.aStall = 5;
+                    if (this.Input.A.state >= ButtonState.Pressed && !this.isText && this.aStall == 0) {    // If you press A && a text box is not displayed && A is not stalled.
+                        this.sMenuSelect.play();                                                            // Play sound effect
+                        this.yesNo = 0;                                                                     // Reset Yes/No cursor pos
+                        this.isText = true;                                                                 // Open a text box
+                        this.aStall = 5;                                                                    // Stall A inputs until neutral
                     }
 
-                    if (this.Input.B.state === ButtonState.Pressed && !this.isText && this.bStall == 0) {
-                        this.sMenuClose.play();
-                        this.songPlayed = false;
-                        this.open = false;
-                        this.onOpen = true;
+                    if (this.Input.B.state === ButtonState.Pressed && !this.isText && this.bStall == 0) {   // If you press B && a text box is not displayed && B is not stalled.
+                        this.sMenuClose.play();                                                             // Play sound effect
+                        this.closeWindow();                                                                 // Close the SoS UI.
                     }
 
 
-                    if (this.isText) // WHEN THE TEXT BOX IS OPEN
+                    if (this.isText)                                                                        // If a text box is open
                     {
-                        if (this.yesNo == 0) {
-                            this.placeOnMap(this.warpTextYes[this.cursorPos], { x: 500, y: 600 }, this.warpTextNo[this.cursorPos].height * 3, this.warpTextNo[this.cursorPos].width * 3)
+                        if (this.yesNo == 0) {                                                              // If Yes/No is on "Yes".
+                            this.placeOnMap(this.warpTextYes[this.cursorPos], { x: 500, y: 600 }, this.warpTextNo[this.cursorPos].height * 3, this.warpTextNo[this.cursorPos].width * 3);   // Draw yes version of dialoge.
                         }
                         else {
-                            this.placeOnMap(this.warpTextNo[this.cursorPos], { x: 500, y: 600 }, this.warpTextNo[this.cursorPos].height * 3, this.warpTextNo[this.cursorPos].width * 3);
+                            this.placeOnMap(this.warpTextNo[this.cursorPos], { x: 500, y: 600 }, this.warpTextNo[this.cursorPos].height * 3, this.warpTextNo[this.cursorPos].width * 3);    // Draw no version of dialoge.
                         }
 
-                        if (this.Input.joystickY > 50 && !this.inputstall && this.yesNo != 0) {
+                        if (this.Input.joystickY > 50 && !this.inputstall && this.yesNo != 0) { // If joystick is down && Joystick is not stalled. && Yes/No is on No.
                             this.yesNo = 0;
                             this.sBlip.play();
                         }
@@ -533,7 +522,7 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
                         if (this.Input.A.state >= ButtonState.Pressed && this.yesNo == 0 && this.aStall == 0) {
                             this.sMenuSelect.play();
                             this.transport(this.warpLocations[this.cursorPos]);
-                            this.songPlayed = false;
+                            this.closeWindow();
                             this.lastWarp = this.warpLocations[this.cursorPos];
                             this.isText = false;
                             this.aStall = 5;
@@ -569,7 +558,7 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
 
                 if ((this.Input.B.state === ButtonState.Pressed && !this.isText && this.bStall == 0) || (this.Input.A.state >= ButtonState.Pressed && this.yesNo == 0 && this.aStall == 0)) {
                     this.sTextClose.play();
-                    this.songPlayed = false;
+                    this.closeWindow();
                 }
 
 
@@ -656,9 +645,12 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
         return 7 - i;
     }
 
-    hasSongPlayed() {
-
-
+    closeWindow()
+    {
+        this.sTextClose.play();
+        this.songPlayed = false;
+        this.open = false;
+        this.onOpen = true;
     }
 
     spawnOwl(i: number) {
@@ -680,8 +672,8 @@ export default class SongOfSoaringClient implements ISongOfSoaringClient {
     }
 
     indexWarpCrash() {
-        this.core.OOT?.commandBuffer.arbitraryFunctionCall(0x80000180, 0, 0)
-        this.ModLoader.logger.error("Get index crashed pleb.")
+        this.core.OOT?.commandBuffer.arbitraryFunctionCall(0x80000180, 0, 0);
+        this.ModLoader.logger.error("Get index crashed pleb.");
     }
 
 }
